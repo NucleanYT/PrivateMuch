@@ -44,3 +44,4 @@
 - 3D info card that tilts where you press it: what's deleted when you close a private window, who can still see what you do, and a live check showing 0 bytes stored and 0 cookies.
 - Stores nothing: no cookies, no storage, no trackers, no referrer sent to sites.
 - Home screen app: `manifest.webmanifest` plus icons in `icons/` (the dot globe with the eye). Hosted on GitHub Pages at https://nucleanyt.github.io/PrivateMuch/. Chrome can't install apps from an incognito tab, so add it from a normal tab.
+- Standalone Android app (I'm on Android, Mi 10T): the source is in `android/`. GitHub builds it on every push and puts it at https://github.com/NucleanYT/PrivateMuch/releases/download/latest/PrivateMuch.apk. The page is built in, so it works without a website. Cookies, site data, cache and history are wiped every time it starts and closes. Search results open inside the app. The keyboard doesn't learn what I type, and nothing is backed up.
