@@ -9,9 +9,13 @@
 - Effects should only react where I'm actually touching, not anywhere on the screen.
 - Interactions should feel gentle and bouncy, never aggressive.
 - When I ask for a file, I want everything included.
+- It shouldn't look "vibecoded" (the generic AI look): no buttons that do nothing, no gimmicks, plain and honest wording.
+- NEVER change the dot globe unless I ask. It's perfect as it is.
 
 ### My likes
-- The final version overall ("Good job! I like this!").
+- The final version overall ("Good job! I like this!"). This was the old version from the lost incognito chat.
+- The rebuilt page in this repo, `index.html`: "I LOVE this. It's 100x better than the previous one."
+- The dot globe in the rebuilt page: "don't you DARE TOUCH THE CIRCLE. ITS SO GOOD".
 - The springy, bouncy dots that wobble and settle back.
 - The rotating 3D dot globe centered behind the icon, at its original (smaller) size.
 - The serious gray and teal look with the grid floor and layered 3D tilt.
@@ -27,3 +31,15 @@
 7. Dragging was hard to start and the tap effect kept replaying mid-drag. Cause: phone touch cancels were treated as taps, plus extra hold rings. Fixed by rebuilding on raw touch events with a strict tap rule.
 8. The focused search bar grew about 14% wider and got cut off at the edges. Fixed by shrinking the lift to about 3% and adding side padding.
 9. The first .md file left out the older versions, and Claude misread "memories" as only saved memories (none exist in incognito chats).
+10. Only about 10% of the incognito chat got saved. Claude can't open incognito chats, and that chat is gone, so the page was rebuilt from my description.
+11. The first rebuild cut off the search placeholder text ("...with Duc"). Fixed by shortening it to "Search".
+12. Bugs found in the cleanup pass, all fixed: button press effects didn't show on iPhone; the card tilt could follow a finger that wasn't on the card; the keyboard focus ring was hidden inside the search bar; the hidden clear button could still be reached with Tab; the page said "private mode" even in a normal window.
+
+### The current page (`index.html`), in case it ever needs rebuilding
+- Dark gray and teal, a moving grid floor, system fonts only (nothing loaded from other sites).
+- Top: "PrivateMuch" wordmark. Then the eye icon with a line through it, in front of the rotating 3D dot globe.
+- Globe: dots spring away from the finger and glow, the whole globe leans toward the finger, a tap bounces it with a ripple, tapping the middle makes the eye blink. Only touches on the globe count, it keeps spinning while held, and dragging it never scrolls the page.
+- Headline "Search privately", then the search bar (DuckDuckGo). Teal focus glow with a 3% lift and 16px text. The box clears itself after every search.
+- Teal text selection and teal typing cursor.
+- 3D info card that tilts where you press it: what's deleted when you close a private window, who can still see what you do, and a live check showing 0 bytes stored and 0 cookies.
+- Stores nothing: no cookies, no storage, no trackers, no referrer sent to sites.

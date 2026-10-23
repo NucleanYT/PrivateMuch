@@ -86,19 +86,11 @@ input { caret-color: var(--teal); }
 .rise { animation: rise .9s var(--spring) both; animation-delay: var(--d, 0s); }
 @keyframes rise { from { opacity: 0; transform: translateY(16px) scale(.98); } }
 
-.status {
+.wordmark {
   justify-self: center; margin: 0;
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 6px 12px 6px 10px; border-radius: 999px;
-  border: 1px solid var(--line); background: rgba(19, 27, 30, .7);
-  font: 600 11px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+  font: 600 15px/1 var(--font-display); letter-spacing: -.01em; color: var(--muted);
 }
-.pulse { position: relative; width: 7px; height: 7px; border-radius: 50%; background: var(--teal); }
-.pulse::after {
-  content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--teal);
-  animation: pulse 2.2s var(--ease-out) infinite;
-}
-@keyframes pulse { from { transform: scale(1); opacity: .7; } to { transform: scale(3.4); opacity: 0; } }
+.wordmark span { color: var(--teal); }
 
 /* ---------- Hero: dot globe + icon ---------- */
 .hero { display: grid; justify-items: center; gap: 6px; text-align: center; }
@@ -140,15 +132,9 @@ input { caret-color: var(--teal); }
 @keyframes draw { to { stroke-dashoffset: 0; } }
 
 h1 {
-  margin: 0; font: 680 clamp(26px, 7.4vw, 34px)/1.12 var(--font-display); letter-spacing: -.02em; text-wrap: balance;
-  background: linear-gradient(100deg, var(--fg) 0%, var(--fg) 40%, #9ff0e6 50%, var(--fg) 60%, var(--fg) 100%);
-  background-size: 260% 100%; background-position: 100% 0;
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-  animation: rise .9s var(--spring) both .1s, sheen 7s ease-in-out infinite 1.4s;
+  margin: 0; font: 650 clamp(28px, 8vw, 34px)/1.1 var(--font-display); letter-spacing: -.025em; text-wrap: balance;
 }
-@keyframes sheen { 0% { background-position: 100% 0; } 30%, 100% { background-position: 0% 0; } }
-h1::selection { color: var(--bg); -webkit-text-fill-color: var(--bg); }
-.lede { margin: 0; max-width: 30ch; color: var(--muted); text-wrap: balance; }
+.lede { margin: 0; max-width: 34ch; font-size: 16px; line-height: 1.5; color: var(--muted); text-wrap: pretty; }
 
 /* ---------- Search ---------- */
 .search-wrap { padding-inline: 6px; }
@@ -198,11 +184,11 @@ h1::selection { color: var(--bg); -webkit-text-fill-color: var(--bg); }
   transition: transform .45s var(--spring), background .25s, color .25s, opacity .25s;
 }
 .btn:active { transform: scale(.86); }
-.btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.btn:focus-visible { outline: 2px solid var(--fg); outline-offset: -4px; }
 .btn.go { background: var(--teal); color: var(--bg); }
 .btn.go:active { background: #5fe0d2; }
-.btn.clear { opacity: 0; transform: scale(.6); pointer-events: none; }
-.search.has-text .btn.clear { opacity: 1; transform: scale(1); pointer-events: auto; }
+.btn.clear { opacity: 0; transform: scale(.6); pointer-events: none; visibility: hidden; transition: transform .45s var(--spring), opacity .25s, visibility 0s .25s; }
+.search.has-text .btn.clear { opacity: 1; transform: scale(1); pointer-events: auto; visibility: visible; transition-delay: 0s; }
 .search.has-text .btn.clear:active { transform: scale(.86); }
 
 .ripple {
@@ -213,33 +199,22 @@ h1::selection { color: var(--bg); -webkit-text-fill-color: var(--bg); }
 }
 @keyframes ripple { to { transform: scale(14); opacity: 0; } }
 
-.chips { list-style: none; margin: -8px 0 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-.chip {
-  position: relative; overflow: hidden;
-  display: inline-flex; align-items: center; gap: 7px;
-  padding: 7px 12px; border-radius: 999px;
-  border: 1px solid var(--line); background: rgba(19, 27, 30, .75);
-  font: 600 11px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
-  transition: transform .45s var(--spring), border-color .25s, color .25s;
-  -webkit-user-select: none; user-select: none;
-}
-.chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 8px var(--teal); }
-.chip:active { transform: scale(.92) translateY(1px); border-color: rgba(53, 208, 191, .5); color: var(--fg); }
+.fine { margin: -10px 0 0; text-align: center; font-size: 13px; color: var(--faint); }
 
 /* ---------- 3D info card ---------- */
 .card-wrap { perspective: 900px; padding-block: 6px; }
 .card {
   position: relative; transform-style: preserve-3d; will-change: transform;
-  padding: 22px 20px 20px; border-radius: 22px;
-  background: linear-gradient(160deg, #172225 0%, #111a1c 55%, #0f1719 100%);
+  padding: 22px 20px 18px; border-radius: 18px;
+  background: var(--surface);
   border: 1px solid var(--line);
-  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, .7), 0 0 0 1px rgba(53, 208, 191, .04) inset;
-  display: grid; gap: 18px;
+  box-shadow: 0 30px 60px -24px rgba(0, 0, 0, .75);
+  display: grid; gap: 20px;
   touch-action: pan-y;
 }
 .card::before { /* back plate for depth */
-  content: ""; position: absolute; inset: 10px -6px -10px; border-radius: 24px; z-index: -1;
-  background: rgba(53, 208, 191, .05); border: 1px solid rgba(53, 208, 191, .10);
+  content: ""; position: absolute; inset: 10px -6px -10px; border-radius: 20px; z-index: -1;
+  background: rgba(53, 208, 191, .04); border: 1px solid rgba(53, 208, 191, .09);
   transform: translateZ(-40px);
 }
 .glare {
@@ -250,19 +225,16 @@ h1::selection { color: var(--bg); -webkit-text-fill-color: var(--bg); }
 .l1 { transform: translateZ(34px); }
 .l2 { transform: translateZ(22px); }
 .l3 { transform: translateZ(46px); }
-.eyebrow { margin: 0 0 6px; font: 600 11px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--teal); }
-h2 { margin: 0 0 8px; font: 650 21px/1.2 var(--font-display); letter-spacing: -.01em; text-wrap: balance; }
-.l1 p:last-child { margin: 0; color: var(--muted); }
-.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr)); gap: 12px; }
-.col {
-  min-width: 0; padding: 14px; border-radius: 16px;
-  background: rgba(11, 16, 18, .55); border: 1px solid var(--line);
-}
-h3 { margin: 0 0 10px; font: 600 11px/1.2 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg); }
-.col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+h2 { margin: 0 0 8px; font: 650 20px/1.25 var(--font-display); letter-spacing: -.015em; text-wrap: balance; }
+.l1 p { margin: 0; color: var(--muted); text-wrap: pretty; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 20px 24px; }
+.col { min-width: 0; }
+h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
+.col ul { list-style: none; margin: 0; padding: 0; display: grid; }
 .col li {
   position: relative; display: flex; align-items: center; gap: 10px;
-  padding: 6px 8px; margin-inline: -8px; border-radius: 9px; color: var(--muted);
+  padding: 9px 8px; margin-inline: -8px; border-radius: 8px; color: var(--muted);
+  box-shadow: inset 0 -1px 0 var(--line);
   transition: background .3s, color .3s, transform .45s var(--spring);
   animation: rise .8s var(--spring) both; animation-delay: calc(.5s + var(--i, 0) * .07s);
 }
@@ -271,19 +243,18 @@ h3 { margin: 0 0 10px; font: 600 11px/1.2 var(--font-mono); letter-spacing: .08e
 .gone .mark { color: var(--teal); }
 .seen .mark { color: var(--faint); }
 .meter {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
-  padding: 12px 14px; border-radius: 14px;
-  background: rgba(53, 208, 191, .07); border: 1px solid rgba(53, 208, 191, .22);
-  font: 500 12px/1.3 var(--font-mono); color: var(--muted);
+  display: grid; grid-template-columns: auto auto 1fr; align-items: end; gap: 4px 28px;
+  margin: 0; padding: 14px 16px; border-radius: 12px;
+  background: rgba(53, 208, 191, .06); border: 1px solid rgba(53, 208, 191, .18);
 }
-.meter b { color: var(--teal); font-weight: 600; font-variant-numeric: tabular-nums; }
-.meter .live { display: inline-flex; align-items: center; gap: 7px; color: var(--fg); letter-spacing: .06em; text-transform: uppercase; font-size: 11px; }
-
-.foot { text-align: center; color: var(--faint); font: 500 12px/1.5 var(--font-mono); margin: 0; }
+.meter div { display: grid; gap: 2px; }
+.meter dt { font-size: 12px; color: var(--muted); }
+.meter dd { margin: 0; font: 600 22px/1.1 var(--font-mono); color: var(--teal); font-variant-numeric: tabular-nums; }
+.meter p { margin: 0; justify-self: end; text-align: right; font-size: 12px; color: var(--faint); }
+@media (max-width: 360px) { .meter { grid-template-columns: auto auto; } .meter p { grid-column: 1 / -1; justify-self: start; text-align: left; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .floor, .pulse::after, h1 { animation: none; }
-  h1 { background-position: 0 0; }
+  .floor { animation: none; }
   .rise, .col li { animation-duration: .01s; }
 }
 </style>
@@ -292,7 +263,7 @@ h3 { margin: 0 0 10px; font: 600 11px/1.2 var(--font-mono); letter-spacing: .08e
 <div class="bg" aria-hidden="true"><div class="horizon"></div><div class="floor"></div></div>
 
 <main class="page">
-  <p class="status rise"><span class="pulse"></span>Private mode · nothing saved</p>
+  <p class="wordmark rise">Private<span>Much</span></p>
 
   <div class="hero">
     <div class="stage rise" id="stage" style="--d:.05s">
@@ -308,8 +279,8 @@ h3 { margin: 0 0 10px; font: 600 11px/1.2 var(--font-mono); letter-spacing: .08e
         </svg>
       </div>
     </div>
-    <h1>You're browsing privately</h1>
-    <p class="lede rise" style="--d:.18s">Search without a trace. This page keeps no record of your searches, sets no cookies and stores nothing on your device.</p>
+    <h1 class="rise" style="--d:.1s">Search privately</h1>
+    <p class="lede rise" style="--d:.18s">PrivateMuch doesn't store anything you type. Use it in a private window and your browser clears the rest when you close it.</p>
   </div>
 
   <div class="search-wrap rise" style="--d:.26s">
@@ -317,7 +288,7 @@ h3 { margin: 0 0 10px; font: 600 11px/1.2 var(--font-mono); letter-spacing: .08e
       <span class="glass" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
       </span>
-      <input id="q" type="search" placeholder="Search with DuckDuckGo" aria-label="Search privately with DuckDuckGo"
+      <input id="q" type="search" placeholder="Search" aria-label="Search privately with DuckDuckGo"
              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
              enterkeyhint="search" inputmode="search" maxlength="500">
       <button class="btn clear" id="clear" type="button" aria-label="Clear search">
@@ -329,23 +300,18 @@ h3 { margin: 0 0 10px; font: 600 11px/1.2 var(--font-mono); letter-spacing: .08e
     </form>
   </div>
 
-  <ul class="chips rise" style="--d:.34s" aria-label="What this page does not do">
-    <li class="chip">No cookies</li>
-    <li class="chip">No storage</li>
-    <li class="chip">No trackers</li>
-  </ul>
+  <p class="fine rise" style="--d:.32s">Searches open on DuckDuckGo. Nothing is stored here.</p>
 
   <section class="card-wrap rise" style="--d:.42s" aria-labelledby="how">
     <article class="card" id="card">
       <div class="glare" id="glare"></div>
       <div class="layer l1">
-        <p class="eyebrow">Private mode, explained</p>
-        <h2 id="how">What goes and what stays</h2>
-        <p>Open PrivateMuch in your browser's private window. When you close that window, your browser throws away everything from the session.</p>
+        <h2 id="how">How private browsing works</h2>
+        <p>When you close a private window, your browser deletes what that session left behind. It doesn't hide you from the sites and networks your traffic passes through.</p>
       </div>
       <div class="layer l2 cols">
         <div class="col gone">
-          <h3>Gone when you close it</h3>
+          <h3>Deleted when you close the window</h3>
           <ul>
             <li style="--i:0"><svg class="mark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l8 8M12 4 4 12"/></svg>Searches you type here</li>
             <li style="--i:1"><svg class="mark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l8 8M12 4 4 12"/></svg>Pages you visited</li>
@@ -354,7 +320,7 @@ h3 { margin: 0 0 10px; font: 600 11px/1.2 var(--font-mono); letter-spacing: .08e
           </ul>
         </div>
         <div class="col seen">
-          <h3>Can still see your activity</h3>
+          <h3>Can still see what you do</h3>
           <ul>
             <li style="--i:4"><svg class="mark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1.5 8C3.3 4.9 5.5 3.5 8 3.5s4.7 1.4 6.5 4.5C12.7 11.1 10.5 12.5 8 12.5S3.3 11.1 1.5 8Z"/><circle cx="8" cy="8" r="1.8" fill="currentColor"/></svg>Websites you visit</li>
             <li style="--i:5"><svg class="mark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1.5 8C3.3 4.9 5.5 3.5 8 3.5s4.7 1.4 6.5 4.5C12.7 11.1 10.5 12.5 8 12.5S3.3 11.1 1.5 8Z"/><circle cx="8" cy="8" r="1.8" fill="currentColor"/></svg>DuckDuckGo, which gets your search</li>
@@ -363,15 +329,13 @@ h3 { margin: 0 0 10px; font: 600 11px/1.2 var(--font-mono); letter-spacing: .08e
           </ul>
         </div>
       </div>
-      <div class="layer l3 meter" aria-live="polite">
-        <span class="live"><span class="pulse"></span>Checked on this device</span>
-        <span>Site storage <b id="bytes">0 B</b></span>
-        <span>Cookies <b id="cookies">0</b></span>
-      </div>
+      <dl class="layer l3 meter">
+        <div><dt>Stored by this site</dt><dd id="bytes">0 B</dd></div>
+        <div><dt>Cookies</dt><dd id="cookies">0</dd></div>
+        <p>Checked on this device</p>
+      </dl>
     </article>
   </section>
-
-  <p class="foot rise" style="--d:.5s">PrivateMuch loads nothing from other sites.</p>
 </main>
 
 <script>
@@ -650,9 +614,10 @@ h3 { margin: 0 0 10px; font: 600 11px/1.2 var(--font-mono); letter-spacing: .08e
   }
   function release() { tilt.active = false; tilt.ts = 1; }
 
-  card.addEventListener('touchstart', (e) => { const t = e.touches[0]; aim(t.clientX, t.clientY); }, { passive: true });
-  card.addEventListener('touchmove', (e) => { const t = e.touches[0]; aim(t.clientX, t.clientY); }, { passive: true });
-  card.addEventListener('touchend', (e) => { if (!e.touches.length) release(); });
+  // targetTouches: only fingers that are on the card, never one resting elsewhere on the screen.
+  card.addEventListener('touchstart', (e) => { const t = e.targetTouches[0]; if (t) aim(t.clientX, t.clientY); }, { passive: true });
+  card.addEventListener('touchmove', (e) => { const t = e.targetTouches[0]; if (t) aim(t.clientX, t.clientY); }, { passive: true });
+  card.addEventListener('touchend', (e) => { if (!e.targetTouches.length) release(); });
   card.addEventListener('touchcancel', release);
   card.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') aim(e.clientX, e.clientY); });
   card.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') release(); });
@@ -686,7 +651,7 @@ h3 { margin: 0 0 10px; font: 600 11px/1.2 var(--font-mono); letter-spacing: .08e
   const q = $('#q');
   const clearBtn = $('#clear');
 
-  function wipe() { q.value = ''; form.classList.remove('has-text'); }
+  function wipe() { q.value = ''; form.classList.remove('has-text', 'sent', 'nudge', 'tick'); }
   function restart(cls) { form.classList.remove(cls); void form.offsetWidth; form.classList.add(cls); }
   function openSearch(url) {
     const a = document.createElement('a');
@@ -716,8 +681,10 @@ h3 { margin: 0 0 10px; font: 600 11px/1.2 var(--font-mono); letter-spacing: .08e
   window.addEventListener('pageshow', wipe);
 
   /* ================= Press ripples ================= */
+  // iOS Safari only shows :active press styles when a touch listener exists.
+  document.addEventListener('touchstart', () => {}, { passive: true });
   document.addEventListener('pointerdown', (e) => {
-    const el = e.target.closest('.btn, .chip');
+    const el = e.target.closest('.btn');
     if (!el) return;
     const r = el.getBoundingClientRect();
     const s = document.createElement('span');
@@ -747,9 +714,10 @@ h3 { margin: 0 0 10px; font: 600 11px/1.2 var(--font-mono); letter-spacing: .08e
     catch (err) { return 0; }
   }
   function fmtBytes(n) { return n < 1024 ? n + ' B' : (n / 1024).toFixed(1) + ' KB'; }
+  function setText(el, text) { if (el.textContent !== text) el.textContent = text; }
   function check() {
-    $('#bytes').textContent = fmtBytes(storedBytes());
-    $('#cookies').textContent = String(cookieCount());
+    setText($('#bytes'), fmtBytes(storedBytes()));
+    setText($('#cookies'), String(cookieCount()));
   }
   check();
   document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
