@@ -43,3 +43,4 @@
 - Teal text selection and teal typing cursor.
 - 3D info card that tilts where you press it: what's deleted when you close a private window, who can still see what you do, and a live check showing 0 bytes stored and 0 cookies.
 - Stores nothing: no cookies, no storage, no trackers, no referrer sent to sites.
+- Home screen app: `manifest.webmanifest` plus icons in `icons/` (the dot globe with the eye). Hosted on GitHub Pages at https://nucleanyt.github.io/PrivateMuch/. Chrome can't install apps from an incognito tab, so add it from a normal tab.
