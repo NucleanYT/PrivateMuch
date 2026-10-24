@@ -1,0 +1,5 @@
+# Keep the same line endings on every computer, so the Windows build packs exactly the same files.
+* text=auto eol=lf
+*.png binary
+*.jar binary
+*.keystore binary
