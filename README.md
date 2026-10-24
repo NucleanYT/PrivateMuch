@@ -1,2 +1,49 @@
 # PrivateMuch
 Vibecoded (but works and is cool) app for searching privately. The app is vibecoded and not the search engine and other stuff outside the app.
+
+<img src="icons/icon-192.png" alt="PrivateMuch icon: an eye with a line through it in front of a globe of teal dots" width="96">
+
+A private search page with a springy 3D dot globe. Search with DuckDuckGo or chat with Duck.ai, and nothing you type is kept.
+
+## Get it
+
+- **Android app:** [download PrivateMuch.apk](https://github.com/NucleanYT/PrivateMuch/releases/download/latest/PrivateMuch.apk) and open it on your phone to install. Android will ask you to allow installs from your browser or file manager the first time.
+- **Web version:** [nucleanyt.github.io/PrivateMuch](https://nucleanyt.github.io/PrivateMuch/). Open it in a private (incognito) tab for the most privacy.
+
+## What it does
+
+- **Dot globe:** a rotating 3D globe of dots behind an eye icon. Drag it to spin it; the globe leans toward your finger while the dots spring away from it. Tap it to make it bounce.
+- **Search or Duck.ai:** a switch above the search bar picks where your text goes. Search opens DuckDuckGo results. Duck.ai sends it to Duck.ai through DuckDuckGo's `!ai` shortcut.
+- **Private browsing explained:** a 3D card that tilts where you press it, showing what gets deleted, who can still see your activity, and a live count of the cookies and storage on your device for the site it's running on.
+
+## Privacy
+
+The page sets no cookies, stores nothing on your device, loads nothing from other sites and has no trackers. The search box clears itself after every search.
+
+The Android app goes further:
+
+- Search results and chats open inside the app, so they never reach your browser's history.
+- Cookies, site data, cache and history are wiped every time the app starts and closes.
+- Your keyboard is told not to learn what you type, autofill is off, and the app is never backed up.
+
+What it can't hide: the websites you visit, DuckDuckGo and Duck.ai themselves, your Wi-Fi, school or work network, and your internet provider can still see your activity.
+
+## Updating the app
+
+Tap **Update** in the top-right corner of the app's home page. It checks GitHub for a newer build, downloads it and opens Android's installer. It only checks when you tap it. The first time, Android asks you to let PrivateMuch install apps.
+
+## How it's made
+
+| Path | What it is |
+| --- | --- |
+| `index.html` | The whole page: layout, globe, search and card, in one file with no outside libraries |
+| `manifest.webmanifest`, `icons/` | App name and icons for adding the web version to a home screen |
+| `android/` | The Android app, which shows `index.html` in a private built-in browser |
+| `.github/workflows/android.yml` | Builds the APK on every push and publishes it as the `latest` release |
+| `MEMORY_NOTES.md` | Notes on preferences and past fixes, so future changes keep what works |
+
+To build the app yourself, install JDK 17 and the Android SDK, then run `./gradlew assembleRelease` inside `android/`. The APK ends up in `android/app/build/outputs/apk/release/`.
+
+## License
+
+GPL-2.0. See [LICENSE](LICENSE).
