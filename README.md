@@ -14,7 +14,7 @@ A private search page with a springy 3D dot globe. Search with DuckDuckGo or cha
 
 - **Dot globe:** a rotating 3D globe of dots behind an eye icon. Drag it to spin it; the globe leans toward your finger while the dots spring away from it. Tap it to make it bounce.
 - **Search or AI:** a switch above the search bar picks where your text goes. With DuckDuckGo (the default), Search opens DuckDuckGo results and Duck.ai sends it to Duck.ai through DuckDuckGo's `!ai` shortcut. With Brave, Search opens Brave Search and Ask Brave sends it to Brave's AI search.
-- **Settings (app):** the gear on the home page switches between DuckDuckGo + Duck.ai and Brave Search + Ask Brave. The app remembers it, along with your bookmarks; nothing else. In a browser, add `?engine=brave` to the web version's link.
+- **Settings (app):** the gear on the home page switches between DuckDuckGo + Duck.ai and Brave Search + Ask Brave. The app remembers it, along with your bookmark addresses; nothing else. In a browser, add `?engine=brave` to the web version's link.
 - **Web addresses:** type an address like `example.com` or `https://example.com` and the site opens directly, like a browser's address bar. In the app this works in DuckDuckGo's own search box too.
 - **Blocks adult content:** searches and Duck.ai questions with adult words are blocked, including disguised spellings like "p0rn" or "p o r n". Every DuckDuckGo search uses strict Safe Search.
 - **Private browsing explained:** a 3D card that tilts where you press it, showing what gets deleted, who can still see your activity, and a live count of the cookies and storage on your device for the site it's running on.
@@ -28,7 +28,7 @@ The Android app goes further:
 - Search results and chats open inside the app, so they never reach your browser's history.
 - While a site is open, the top bar is an address bar: tap it to type a web address or a search. It has a lock for secure sites, reload, a loading line and a Home button. The keyboard isn't allowed to learn what you type there.
 - A bottom bar with Back, Forward, Bookmarks, Tabs and New tab shows while a site is open, and steps aside while you type in the address bar.
-- Bookmarks (bottom bar, or the home page next to Tabs): save the open page, then open or delete saved ones. They're kept only inside the app on your phone and never backed up or sent anywhere. Along with the search engine choice, they're the only things the app keeps after it closes.
+- Bookmarks (bottom bar, or the home page next to Tabs) are only shortcuts: just each site's address is kept, inside the app on your phone, with no page data, cookies or history, and never backed up or sent anywhere. Search results can't be bookmarked, so searches are never kept. Along with the search engine choice, bookmark addresses are the only things the app keeps after it closes.
 - Private tabs: the tabs button (in the bottom bar, and on the home page next to Settings) shows how many are open and opens a history-free overview of tab cards with previews, where you can switch, close one or all tabs, or open a new one. Tabs live only in memory and are wiped with everything else when the app closes.
 - Cookies, site data, cache and history are wiped every time the app starts and closes.
 - Your keyboard is told not to learn what you type, autofill is off, and the app is never backed up.

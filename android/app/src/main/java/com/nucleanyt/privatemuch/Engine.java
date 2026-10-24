@@ -5,7 +5,7 @@ import android.content.Context;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
-/** The search engine picked in Settings. Along with bookmarks, it's all the app remembers between launches. */
+/** The search engine picked in Settings. Along with bookmark addresses, it's all the app remembers between launches. */
 enum Engine {
     DUCKDUCKGO("duckduckgo", "DuckDuckGo", "Duck.ai", "Searches with DuckDuckGo. AI chats use Duck.ai."),
     BRAVE("brave", "Brave Search", "Ask Brave", "Searches with Brave Search. AI chats use Ask Brave, Brave's AI search.");

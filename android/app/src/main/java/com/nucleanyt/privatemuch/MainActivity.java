@@ -292,20 +292,26 @@ public class MainActivity extends Activity {
     private void refreshBookmarks(boolean animate) {
         String url = current.url();
         boolean onSite = !current.onHome();
-        bookmarksView.show(bookmarks.all(), onSite ? current.label() : null, onSite && bookmarks.contains(url), animate);
+        bookmarksView.show(bookmarks.all(), onSite ? current.label() : null, onSite && bookmarks.contains(url),
+                !UrlInput.isSearchPage(url), animate);
         bottomBar.setBookmarked(onSite && bookmarks.contains(url));
     }
 
-    /** Saves the open page, or removes it if it's already saved. Blocked sites can't be saved. */
+    /**
+     * Adds a shortcut to the open page, or removes it if there already is one.
+     * Search results (their address holds what was typed) and blocked sites can't be bookmarked.
+     */
     private void toggleBookmark() {
         String url = current.url();
         if (current.onHome()) return;
         if (bookmarks.contains(url)) {
             bookmarks.remove(url);
+        } else if (UrlInput.isSearchPage(url)) {
+            Toast.makeText(this, "Searches can't be bookmarked, so they're never kept.", Toast.LENGTH_SHORT).show();
         } else if (ContentFilter.isBlockedUrl(url)) {
             Toast.makeText(this, "Adult sites can't be bookmarked.", Toast.LENGTH_SHORT).show();
-        } else if (!bookmarks.add(current.label(), url)) {
-            Toast.makeText(this, "You can save up to " + Bookmarks.MAX + " bookmarks. Delete some first.", Toast.LENGTH_SHORT).show();
+        } else if (!bookmarks.add(url)) {
+            Toast.makeText(this, "You can have up to " + Bookmarks.MAX + " bookmarks. Remove some first.", Toast.LENGTH_SHORT).show();
         }
     }
 

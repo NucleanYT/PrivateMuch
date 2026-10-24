@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.RippleDrawable;
+import android.net.Uri;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -21,7 +22,7 @@ import android.widget.TextView;
 
 import java.util.List;
 
-/** Full-screen bookmarks: save or remove the current page, open or delete saved ones. */
+/** Full-screen bookmarks: shortcuts to sites. Add or remove the current page, open or remove saved shortcuts. */
 final class BookmarksView extends FrameLayout {
 
     interface Listener {
@@ -99,14 +100,14 @@ final class BookmarksView extends FrameLayout {
 
     /**
      * Rebuilds the screen. currentLabel is the open site's name, or null on the home page
-     * (then there's nothing to bookmark).
+     * (then there's nothing to bookmark). Search results can't be bookmarked (currentAllowed false).
      */
-    void show(List<Bookmarks.Bookmark> bookmarks, String currentLabel, boolean currentSaved, boolean animate) {
+    void show(List<Bookmarks.Bookmark> bookmarks, String currentLabel, boolean currentSaved, boolean currentAllowed, boolean animate) {
         body.removeAllViews();
         int n = bookmarks.size();
-        count.setText(n == 0 ? "None saved yet" : n == 1 ? "1 saved" : n + " saved");
+        count.setText(n == 0 ? "No bookmarks yet" : n == 1 ? "1 bookmark" : n + " bookmarks");
 
-        if (currentLabel != null) body.addView(currentCard(currentLabel, currentSaved), cardParams());
+        if (currentLabel != null) body.addView(currentCard(currentLabel, currentSaved, currentAllowed), cardParams());
 
         if (n == 0) {
             body.addView(emptyState());
@@ -120,8 +121,8 @@ final class BookmarksView extends FrameLayout {
         animate().alpha(0f).translationX(dp(40)).setDuration(200).withEndAction(after);
     }
 
-    /** The open page, with a button to save or remove it. */
-    private View currentCard(String label, boolean saved) {
+    /** The open page, with a button to add or remove its shortcut. */
+    private View currentCard(String label, boolean saved, boolean allowed) {
         Context context = getContext();
         LinearLayout card = new LinearLayout(context);
         card.setOrientation(LinearLayout.HORIZONTAL);
@@ -150,8 +151,20 @@ final class BookmarksView extends FrameLayout {
         texts.addView(name);
         card.addView(texts, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
+        if (!allowed) { // a search's address holds what was typed, so it's never kept
+            TextView why = new TextView(context);
+            why.setText("Searches can't be bookmarked");
+            why.setTextColor(FAINT);
+            why.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            why.setGravity(Gravity.END);
+            LinearLayout.LayoutParams whyParams = new LinearLayout.LayoutParams(dp(120), ViewGroup.LayoutParams.WRAP_CONTENT);
+            whyParams.setMarginStart(dp(10));
+            card.addView(why, whyParams);
+            return card;
+        }
+
         TextView action = new TextView(context);
-        action.setText(saved ? "Saved" : "Bookmark");
+        action.setText(saved ? "Bookmarked" : "Bookmark");
         action.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
         action.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         action.setGravity(Gravity.CENTER_VERTICAL);
@@ -159,7 +172,7 @@ final class BookmarksView extends FrameLayout {
         action.setPadding(dp(12), dp(8), dp(14), dp(8));
         GradientDrawable pill = new GradientDrawable();
         pill.setCornerRadius(dp(18));
-        if (saved) { // already saved: a quiet outline; tapping removes it
+        if (saved) { // already a bookmark: a quiet outline; tapping removes it
             action.setTextColor(TEAL);
             action.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_bookmark_small, 0, 0, 0);
             pill.setStroke(dp(1), Color.parseColor("#8035D0BF"));
@@ -199,14 +212,14 @@ final class BookmarksView extends FrameLayout {
         texts.setPadding(dp(12), 0, dp(6), 0);
         String host = AddressBar.displayName(bookmark.url);
         TextView name = new TextView(context);
-        name.setText(bookmark.title.isEmpty() ? host : bookmark.title);
+        name.setText(host); // only the address is kept, so the site's name and page come from it
         name.setTextColor(TEXT);
         name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
         name.setSingleLine(true);
         name.setEllipsize(TextUtils.TruncateAt.END);
         texts.addView(name);
         TextView site = new TextView(context);
-        site.setText(host);
+        site.setText(pageOf(bookmark.url));
         site.setTextColor(MUTED);
         site.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
         site.setSingleLine(true);
@@ -246,7 +259,7 @@ final class BookmarksView extends FrameLayout {
         icon.setAlpha(0.6f);
         empty.addView(icon, new LinearLayout.LayoutParams(dp(32), dp(32)));
         TextView text = new TextView(context);
-        text.setText("No bookmarks yet. Open a site, then tap the bookmark button to save it here.");
+        text.setText("No bookmarks yet. Open a site, then tap the bookmark button to add a shortcut to it here.");
         text.setTextColor(MUTED);
         text.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
         text.setGravity(Gravity.CENTER);
@@ -256,7 +269,7 @@ final class BookmarksView extends FrameLayout {
         return empty;
     }
 
-    /** Where bookmarks are kept, and Delete all (which asks for a second tap). */
+    /** What a bookmark keeps (only the address), and Remove all (which asks for a second tap). */
     private View footer(boolean hasBookmarks) {
         Context context = getContext();
         LinearLayout footer = new LinearLayout(context);
@@ -265,7 +278,7 @@ final class BookmarksView extends FrameLayout {
         footer.setPadding(dp(12), dp(18), dp(12), 0);
 
         TextView note = new TextView(context);
-        note.setText("Bookmarks are saved only on this phone, inside PrivateMuch. They're never backed up or sent anywhere. Everything else is still wiped when you close the app.");
+        note.setText("A bookmark is only a shortcut. Just the site's address is kept, on this phone inside PrivateMuch: no page data, cookies or history, and it's never backed up or sent anywhere. Opening one is a fresh, private visit.");
         note.setTextColor(FAINT);
         note.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
         note.setGravity(Gravity.CENTER);
@@ -276,7 +289,7 @@ final class BookmarksView extends FrameLayout {
         if (hasBookmarks) {
             confirmingDeleteAll = false;
             TextView deleteAll = new TextView(context);
-            deleteAll.setText("Delete all bookmarks");
+            deleteAll.setText("Remove all bookmarks");
             deleteAll.setTextColor(TEAL);
             deleteAll.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
             deleteAll.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
@@ -290,17 +303,23 @@ final class BookmarksView extends FrameLayout {
                     listener.onDeleteAll();
                     return;
                 }
-                confirmingDeleteAll = true; // saved bookmarks can't be brought back, so ask once more
-                deleteAll.setText("Tap again to delete all");
+                confirmingDeleteAll = true; // removed bookmarks can't be brought back, so ask once more
+                deleteAll.setText("Tap again to remove all");
                 deleteAll.postDelayed(() -> {
                     confirmingDeleteAll = false;
-                    deleteAll.setText("Delete all bookmarks");
+                    deleteAll.setText("Remove all bookmarks");
                 }, 3000);
             });
             AddressBar.addSpringPress(deleteAll);
             footer.addView(deleteAll);
         }
         return footer;
+    }
+
+    /** The page part of the address ("/wiki/Duck"), or "Home page" for the site's front page. */
+    static String pageOf(String url) {
+        String path = Uri.parse(url).getPath();
+        return path == null || path.isEmpty() || path.equals("/") ? "Home page" : path;
     }
 
     private LinearLayout.LayoutParams cardParams() {

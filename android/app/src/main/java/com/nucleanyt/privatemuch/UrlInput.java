@@ -87,6 +87,31 @@ final class UrlInput {
         return null;
     }
 
+    /**
+     * True for DuckDuckGo and Brave search and AI pages whose address carries what was typed (?q=...),
+     * so they can't be bookmarked and a search never ends up kept.
+     */
+    static boolean isSearchPage(String url) {
+        if (url == null) return false;
+        int start = url.indexOf("://");
+        if (start < 0) return false;
+        start += 3;
+        int end = start;
+        while (end < url.length() && "/?#".indexOf(url.charAt(end)) < 0) end++;
+        String host = url.substring(start, end).toLowerCase(Locale.ROOT);
+        boolean engine = host.equals("duckduckgo.com") || host.endsWith(".duckduckgo.com")
+                || host.equals("search.brave.com") || host.equals("duck.ai");
+        if (!engine) return false;
+        int q = url.indexOf('?');
+        if (q < 0) return false;
+        int hash = url.indexOf('#', q);
+        String query = hash < 0 ? url.substring(q + 1) : url.substring(q + 1, hash);
+        for (String pair : query.split("&")) {
+            if (pair.startsWith("q=")) return true;
+        }
+        return false;
+    }
+
     private static boolean isWebHost(String hostAndPort) {
         Matcher m = HOST_AND_PORT.matcher(hostAndPort.toLowerCase(Locale.ROOT));
         if (!m.matches()) return false;

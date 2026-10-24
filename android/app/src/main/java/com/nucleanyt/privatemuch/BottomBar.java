@@ -71,10 +71,10 @@ final class BottomBar extends LinearLayout {
         setAvailable(forward, canGoForward);
     }
 
-    /** The bookmark icon fills teal when the open page is saved. */
+    /** The bookmark icon fills teal when the open page has a bookmark. */
     void setBookmarked(boolean saved) {
         bookmarks.setImageResource(saved ? R.drawable.ic_bookmark_filled : R.drawable.ic_bookmark);
-        bookmarks.setContentDescription(saved ? "Bookmarks (this page is saved)" : "Bookmarks");
+        bookmarks.setContentDescription(saved ? "Bookmarks (this page is bookmarked)" : "Bookmarks");
     }
 
     void setTabCount(int count) {

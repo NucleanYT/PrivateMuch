@@ -11,19 +11,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Saved sites. Along with the search engine choice, they're the only things PrivateMuch keeps after it closes.
- * Stored privately inside the app; the app turns off Android backups, so they're never copied anywhere.
+ * Bookmarks are only shortcuts: just each site's address is kept, nothing about the page, no cookies,
+ * no history. Kept privately inside the app (Android backups are off), so they're never copied anywhere.
  */
 final class Bookmarks {
 
     static final int MAX = 200;
 
     static final class Bookmark {
-        final String title;
         final String url;
 
-        Bookmark(String title, String url) {
-            this.title = title;
+        Bookmark(String url) {
             this.url = url;
         }
     }
@@ -36,15 +34,22 @@ final class Bookmarks {
 
     Bookmarks(Context context) {
         prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        boolean hadTitles = false;
         try {
             JSONArray saved = new JSONArray(prefs.getString(KEY, "[]"));
             for (int i = 0; i < saved.length(); i++) {
-                JSONObject o = saved.getJSONObject(i);
-                items.add(new Bookmark(o.optString("title"), o.optString("url")));
+                Object entry = saved.get(i);
+                if (entry instanceof JSONObject) { // older versions also kept the page title; drop it
+                    hadTitles = true;
+                    entry = ((JSONObject) entry).optString("url");
+                }
+                String url = String.valueOf(entry);
+                if (!url.isEmpty() && indexOf(url) < 0) items.add(new Bookmark(url));
             }
         } catch (JSONException e) {
             items.clear(); // unreadable data: start with an empty list rather than crash
         }
+        if (hadTitles) save();
     }
 
     /** Newest first. */
@@ -57,10 +62,10 @@ final class Bookmarks {
     }
 
     /** Returns false when the list is full. */
-    boolean add(String title, String url) {
+    boolean add(String url) {
         if (url == null || url.isEmpty() || contains(url)) return true;
         if (items.size() >= MAX) return false;
-        items.add(0, new Bookmark(title == null ? "" : title, withoutFragment(url)));
+        items.add(0, new Bookmark(withoutFragment(url)));
         save();
         return true;
     }
@@ -94,13 +99,7 @@ final class Bookmarks {
 
     private void save() {
         JSONArray list = new JSONArray();
-        try {
-            for (Bookmark b : items) {
-                list.put(new JSONObject().put("title", b.title).put("url", b.url));
-            }
-        } catch (JSONException e) {
-            return; // can't happen with plain strings; never save a half-written list
-        }
+        for (Bookmark b : items) list.put(b.url);
         prefs.edit().putString(KEY, list.toString()).apply();
     }
 }
