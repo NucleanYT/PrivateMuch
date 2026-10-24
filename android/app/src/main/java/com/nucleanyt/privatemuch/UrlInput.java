@@ -61,10 +61,10 @@ final class UrlInput {
     }
 
     /**
-     * When someone types a web address into DuckDuckGo's own search box, returns that address so the app
-     * can open it directly. Returns null for normal searches and for "!" shortcuts like "!ai".
+     * When someone types a web address into DuckDuckGo's or Brave's own search box, returns that address so
+     * the app can open it directly. Returns null for normal searches and for "!" shortcuts like "!ai".
      */
-    static String fromDuckDuckGoSearch(String url) {
+    static String fromSearchBox(String url) {
         if (url == null) return null;
         int start = url.indexOf("://");
         if (start < 0) return null;
@@ -72,7 +72,9 @@ final class UrlInput {
         int end = start;
         while (end < url.length() && "/?#".indexOf(url.charAt(end)) < 0) end++;
         String host = url.substring(start, end).toLowerCase(Locale.ROOT);
-        if (!(host.equals("duckduckgo.com") || host.equals("www.duckduckgo.com"))) return null;
+        boolean duckDuckGo = host.equals("duckduckgo.com") || host.equals("www.duckduckgo.com");
+        boolean brave = host.equals("search.brave.com") && url.startsWith("/search", end);
+        if (!duckDuckGo && !brave) return null;
         int q = url.indexOf('?');
         if (q < 0) return null;
         int hash = url.indexOf('#', q);

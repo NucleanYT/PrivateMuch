@@ -92,19 +92,28 @@ final class ContentFilter {
     }
 
     /**
-     * Returns the DuckDuckGo search address with strict Safe Search (kp=1) forced on,
-     * or null when the address isn't a DuckDuckGo search or already has it.
+     * Returns the search address with strict Safe Search forced on (kp=1 on DuckDuckGo, safesearch=strict on
+     * Brave Search), or null when the address isn't a search there or already has it.
      */
     static String withSafeSearch(String url) {
         String host = host(url);
-        if (host == null || !(host.equals("duckduckgo.com") || host.endsWith(".duckduckgo.com"))) return null;
+        if (host == null) return null;
+        String strict;
+        if (host.equals("duckduckgo.com") || host.endsWith(".duckduckgo.com")) {
+            strict = "kp=1";
+        } else if (host.equals("search.brave.com") && path(url).matches("/(search|images|videos|news)/?")) {
+            strict = "safesearch=strict";
+        } else {
+            return null;
+        }
+        String key = strict.substring(0, strict.indexOf('=') + 1);
         String query = rawQuery(url);
         if (query == null) return null;
         boolean hasSearch = false;
         StringBuilder kept = new StringBuilder();
         for (String pair : query.split("&")) {
-            if (pair.equals("kp=1")) return null; // already strict
-            if (pair.startsWith("kp=") || pair.isEmpty()) continue;
+            if (pair.equals(strict)) return null; // already strict
+            if (pair.startsWith(key) || pair.isEmpty()) continue;
             if (pair.startsWith("q=")) hasSearch = true;
             kept.append(pair).append('&');
         }
@@ -112,7 +121,7 @@ final class ContentFilter {
         int q = url.indexOf('?');
         int hash = url.indexOf('#', q);
         String fragment = hash < 0 ? "" : url.substring(hash);
-        return url.substring(0, q + 1) + kept + "kp=1" + fragment;
+        return url.substring(0, q + 1) + kept + strict + fragment;
     }
 
     /** Lowercase, accents removed, look-alike digits and symbols turned into letters, spaced-out letters joined. */
@@ -161,6 +170,16 @@ final class ContentFilter {
         int colon = host.indexOf(':');
         if (colon >= 0) host = host.substring(0, colon);
         return host.toLowerCase(Locale.ROOT);
+    }
+
+    private static String path(String url) {
+        int start = url.indexOf("://");
+        if (start < 0) return "";
+        int slash = url.indexOf('/', start + 3);
+        if (slash < 0) return "";
+        int end = slash;
+        while (end < url.length() && "?#".indexOf(url.charAt(end)) < 0) end++;
+        return url.substring(slash, end);
     }
 
     private static String rawQuery(String url) {

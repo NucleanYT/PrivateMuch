@@ -361,7 +361,7 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
           <h3>Can still see what you do</h3>
           <ul>
             <li style="--i:4"><svg class="mark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1.5 8C3.3 4.9 5.5 3.5 8 3.5s4.7 1.4 6.5 4.5C12.7 11.1 10.5 12.5 8 12.5S3.3 11.1 1.5 8Z"/><circle cx="8" cy="8" r="1.8" fill="currentColor"/></svg>Websites you visit</li>
-            <li style="--i:5"><svg class="mark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1.5 8C3.3 4.9 5.5 3.5 8 3.5s4.7 1.4 6.5 4.5C12.7 11.1 10.5 12.5 8 12.5S3.3 11.1 1.5 8Z"/><circle cx="8" cy="8" r="1.8" fill="currentColor"/></svg>DuckDuckGo and Duck.ai, which get what you send</li>
+            <li style="--i:5"><svg class="mark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1.5 8C3.3 4.9 5.5 3.5 8 3.5s4.7 1.4 6.5 4.5C12.7 11.1 10.5 12.5 8 12.5S3.3 11.1 1.5 8Z"/><circle cx="8" cy="8" r="1.8" fill="currentColor"/></svg><span id="engineSees">DuckDuckGo and Duck.ai, which get what you send</span></li>
             <li style="--i:6"><svg class="mark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1.5 8C3.3 4.9 5.5 3.5 8 3.5s4.7 1.4 6.5 4.5C12.7 11.1 10.5 12.5 8 12.5S3.3 11.1 1.5 8Z"/><circle cx="8" cy="8" r="1.8" fill="currentColor"/></svg>Your work, school or Wi-Fi network</li>
             <li style="--i:7"><svg class="mark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1.5 8C3.3 4.9 5.5 3.5 8 3.5s4.7 1.4 6.5 4.5C12.7 11.1 10.5 12.5 8 12.5S3.3 11.1 1.5 8Z"/><circle cx="8" cy="8" r="1.8" fill="currentColor"/></svg>Your internet provider</li>
           </ul>
@@ -801,10 +801,32 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
 
   const modeEl = $('#mode');
   const fine = $('#fine');
-  const COPY = {
-    search: { placeholder: 'Search', label: 'Search privately with DuckDuckGo', fine: 'Search DuckDuckGo or type a web address. Nothing is stored here.' },
-    chat: { placeholder: 'Ask Duck.ai', label: 'Ask Duck.ai privately', fine: 'Chats open on Duck.ai. Nothing is stored here.' },
+  // The app's settings open this page with ?engine=brave; the same link works in a browser.
+  const ENGINES = {
+    duckduckgo: {
+      name: 'DuckDuckGo', ai: 'Duck.ai',
+      // "!ai" is DuckDuckGo's shortcut that hands the text to Duck.ai; kp=1 is strict Safe Search.
+      search: (text) => 'https://duckduckgo.com/?q=' + encodeURIComponent(text) + '&kp=1',
+      chat: (text) => 'https://duckduckgo.com/?q=' + encodeURIComponent('!ai ' + text) + '&kp=1',
+      chatHome: 'https://duck.ai/',
+    },
+    brave: {
+      name: 'Brave', ai: 'Ask Brave',
+      search: (text) => 'https://search.brave.com/search?q=' + encodeURIComponent(text) + '&safesearch=strict',
+      chat: (text) => 'https://search.brave.com/ask?q=' + encodeURIComponent(text),
+      chatHome: 'https://search.brave.com/ask',
+    },
   };
+  let engine = ENGINES.duckduckgo;
+  try { if (new URLSearchParams(location.search).get('engine') === 'brave') engine = ENGINES.brave; } catch (err) { /* keep DuckDuckGo */ }
+  const COPY = {
+    search: { placeholder: 'Search', label: 'Search privately with ' + engine.name, fine: 'Search ' + engine.name + ' or type a web address. Nothing is stored here.' },
+    chat: { placeholder: 'Ask ' + engine.ai.replace(/^Ask /, ''), label: engine.ai + ' privately', fine: 'Chats open on ' + engine.ai + '. Nothing is stored here.' },
+  };
+  modeEl.querySelector('[data-mode="chat"]').textContent = engine.ai;
+  q.setAttribute('aria-label', COPY.search.label);
+  fine.textContent = COPY.search.fine;
+  $('#engineSees').textContent = engine === ENGINES.brave ? 'Brave, which gets your searches and chats' : 'DuckDuckGo and Duck.ai, which get what you send';
   let mode = 'search'; // never remembered between visits
   let warnTimer = 0;
 
@@ -843,15 +865,14 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
     e.preventDefault();
     const term = q.value.trim();
     if (!term) {
-      if (mode === 'chat') { openUrl('https://duck.ai/'); return; } // empty chat: just open Duck.ai
+      if (mode === 'chat') { openUrl(engine.chatHome); return; } // empty chat: just open the AI
       restart('nudge'); q.focus(); return;
     }
     if (isBlocked(term)) { warn('Adult searches are blocked.'); return; }
     const site = mode === 'search' ? toUrl(term) : null; // a web address opens the site itself
     if (site && isBlockedSite(site)) { warn('Adult sites are blocked.'); return; }
     restart('sent');
-    // "!ai" is DuckDuckGo's shortcut that hands the text to Duck.ai; kp=1 is strict Safe Search.
-    openUrl(site || 'https://duckduckgo.com/?q=' + encodeURIComponent(mode === 'chat' ? '!ai ' + term : term) + '&kp=1');
+    openUrl(site || (mode === 'chat' ? engine.chat(term) : engine.search(term)));
     setTimeout(() => { wipe(); q.blur(); form.classList.remove('sent'); }, 350);
   });
   function warn(message) {

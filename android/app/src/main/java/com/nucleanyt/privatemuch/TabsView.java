@@ -21,13 +21,14 @@ import android.widget.TextView;
 
 import java.util.List;
 
-/** Full-screen tab overview: a two-column grid of tab cards with previews, plus New tab. */
+/** Full-screen private tab overview: a two-column grid of tab cards with previews, New tab and Close all. */
 final class TabsView extends FrameLayout {
 
     interface Listener {
         void onSelect(Tab tab);
         void onClose(Tab tab);
         void onNewTab();
+        void onCloseAll();
         void onDismiss();
     }
 
@@ -50,7 +51,9 @@ final class TabsView extends FrameLayout {
         this.tabs = tabs;
         this.current = current;
         this.listener = listener;
-        setBackgroundColor(INK);
+        // A faint teal glow at the top fading into the app's ink, like the home page.
+        setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[] {Color.parseColor("#11201F"), INK, INK}));
         setClickable(true); // keep touches from reaching the page underneath
 
         LinearLayout column = new LinearLayout(context);
@@ -59,20 +62,33 @@ final class TabsView extends FrameLayout {
         LinearLayout header = new LinearLayout(context);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        header.setPadding(dp(20), dp(14), dp(10), dp(10));
+        header.setPadding(dp(18), dp(14), dp(10), dp(10));
 
+        // The same eye-with-a-line badge as the home page, so it's clear these tabs are private.
+        ImageView badge = new ImageView(context);
+        badge.setImageResource(R.drawable.ic_incognito);
+        badge.setScaleType(ImageView.ScaleType.CENTER);
+        GradientDrawable badgeShape = new GradientDrawable();
+        badgeShape.setShape(GradientDrawable.OVAL);
+        badgeShape.setColor(SURFACE);
+        badgeShape.setStroke(dp(1), Color.parseColor("#5935D0BF"));
+        badge.setBackground(badgeShape);
+        header.addView(badge, new LinearLayout.LayoutParams(dp(42), dp(42)));
+
+        LinearLayout titles = new LinearLayout(context);
+        titles.setOrientation(LinearLayout.VERTICAL);
+        titles.setPadding(dp(12), 0, dp(8), 0);
         TextView title = new TextView(context);
-        title.setText("Tabs");
+        title.setText("Private tabs");
         title.setTextColor(TEXT);
-        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
+        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
         title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        header.addView(title);
-
+        titles.addView(title);
         count = new TextView(context);
         count.setTextColor(MUTED);
-        count.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-        count.setPadding(dp(10), dp(4), 0, 0);
-        header.addView(count, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        count.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        titles.addView(count);
+        header.addView(titles, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         TextView newTab = new TextView(context);
         newTab.setText("New tab");
@@ -133,7 +149,7 @@ final class TabsView extends FrameLayout {
     private void build() {
         grid.removeAllViews();
         int n = tabs.size();
-        count.setText(n == 1 ? "1 tab" : n + " tabs");
+        count.setText((n == 1 ? "1 tab" : n + " tabs") + " · history-free");
         for (int i = 0; i < n; i += 2) {
             LinearLayout row = new LinearLayout(getContext());
             row.setOrientation(LinearLayout.HORIZONTAL);
@@ -148,6 +164,48 @@ final class TabsView extends FrameLayout {
             }
             grid.addView(row);
         }
+        grid.addView(footer());
+    }
+
+    /** What makes these tabs private, and a way to close them all at once. */
+    private View footer() {
+        Context context = getContext();
+        LinearLayout footer = new LinearLayout(context);
+        footer.setOrientation(LinearLayout.VERTICAL);
+        footer.setGravity(Gravity.CENTER_HORIZONTAL);
+        footer.setPadding(dp(24), dp(22), dp(24), 0);
+
+        ImageView eye = new ImageView(context);
+        eye.setImageResource(R.drawable.ic_incognito);
+        eye.setAlpha(0.7f);
+        footer.addView(eye, new LinearLayout.LayoutParams(dp(28), dp(28)));
+
+        TextView note = new TextView(context);
+        note.setText("These tabs keep no history. Pages, cookies and site data are wiped when you close PrivateMuch.");
+        note.setTextColor(MUTED);
+        note.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        note.setGravity(Gravity.CENTER);
+        note.setLineSpacing(0, 1.2f);
+        note.setPadding(0, dp(8), 0, dp(14));
+        footer.addView(note);
+
+        TextView closeAll = new TextView(context);
+        closeAll.setText("Close all tabs");
+        closeAll.setTextColor(TEAL);
+        closeAll.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        closeAll.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        closeAll.setPadding(dp(18), dp(10), dp(18), dp(10));
+        GradientDrawable outline = new GradientDrawable();
+        outline.setCornerRadius(dp(18));
+        outline.setStroke(dp(1), Color.parseColor("#8035D0BF"));
+        closeAll.setBackground(new RippleDrawable(ColorStateList.valueOf(Color.parseColor("#4035D0BF")), outline, null));
+        closeAll.setOnClickListener(v -> listener.onCloseAll());
+        AddressBar.addSpringPress(closeAll);
+        footer.addView(closeAll);
+
+        footer.setAlpha(0f);
+        footer.animate().alpha(1f).setStartDelay(200).setDuration(400);
+        return footer;
     }
 
     private View card(Tab tab, int index) {
@@ -188,6 +246,9 @@ final class TabsView extends FrameLayout {
 
         TextView host = new TextView(context);
         host.setText(tab.onHome() ? "PrivateMuch" : AddressBar.displayName(tab.url()));
+        host.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_incognito_small, 0, 0, 0);
+        host.setCompoundDrawablePadding(dp(5));
+        host.setGravity(Gravity.CENTER_VERTICAL);
         host.setTextColor(MUTED);
         host.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
         host.setSingleLine(true);
