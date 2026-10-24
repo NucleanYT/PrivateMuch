@@ -82,10 +82,22 @@ jobs:
         shell: pwsh
         run: ./.github/windows_smoke.ps1
 
-      - name: Try updating the way the app does (temporary)
+      - name: Check the published build fails the button test (temporary)
         continue-on-error: true
         shell: pwsh
-        run: ./.github/windows_update_test.ps1
+        run: |
+          Invoke-WebRequest https://github.com/NucleanYT/PrivateMuch/releases/download/latest/PrivateMuch-Setup.exe -OutFile "$env:RUNNER_TEMP\old-setup.exe"
+          Start-Process "$env:RUNNER_TEMP\old-setup.exe" -ArgumentList '/S' -Wait
+          ./.github/windows_buttons.ps1
+          Start-Process desktop/dist/PrivateMuch-Setup.exe -ArgumentList '/S' -Wait
+
+      - name: Click the window buttons with the real mouse
+        shell: pwsh
+        run: ./.github/windows_buttons.ps1
+
+      - name: Update over the running app, like Check for updates
+        shell: pwsh
+        run: ./.github/windows_update.ps1
 
       - uses: actions/upload-artifact@v4
         with:

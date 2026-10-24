@@ -1,5 +1,5 @@
-# Temporary: repeats what Settings → Check for updates does (start the installer, close the app 0.6 s later)
-# and checks the files really got replaced, with and without the installer's --updated mode.
+# Does what Settings → Check for updates does (start the installer, close the app 0.6 s later) and checks the
+# installer really replaced the app's files and opened it again.
 param([string]$Dist = 'desktop/dist')
 $ErrorActionPreference = 'Continue'
 
@@ -40,8 +40,9 @@ function Windows-Of([string[]]$Names) {
   return $script:list
 }
 
-foreach ($variant in @('', '--updated')) {
-  for ($i = 1; $i -le 3; $i++) {
+$failed = 0
+foreach ($variant in @('')) {
+  for ($i = 1; $i -le 2; $i++) {
     Get-Process -Name PrivateMuch, PrivateMuch-Setup-test -ErrorAction SilentlyContinue | Stop-Process -Force
     Start-Sleep -Seconds 2
     Set-Content $marker 'old version' -NoNewline
@@ -55,7 +56,10 @@ foreach ($variant in @('', '--updated')) {
     Start-Sleep -Seconds 15
     $replaced = (Get-Content $marker -Raw -ErrorAction SilentlyContinue) -eq $original
     $wins = Windows-Of 'PrivateMuch'
-    Write-Host ("RESULT args='{0}' try {1}: installer exit={2} files replaced={3} app windows={4} {5}" -f $variant, $i, $(if ($finished) { $p.ExitCode } else { '-' }), $replaced, $wins.Count, $stuck)
+    Write-Host ("Update {0}: installer exit={1} files replaced={2} app windows={3} {4}" -f $i, $(if ($finished) { $p.ExitCode } else { '-' }), $replaced, $wins.Count, $stuck)
+    if (-not ($finished -and $replaced -and $wins.Count -eq 1)) { $failed++ }
   }
 }
 Get-Process -Name PrivateMuch, PrivateMuch-Setup-test -ErrorAction SilentlyContinue | Stop-Process -Force
+if ($failed) { Write-Host "FAILED: $failed of 2 updates"; exit 1 }
+Write-Host 'Updating over the running app works'
