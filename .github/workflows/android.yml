@@ -78,6 +78,10 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: npm run dist
 
+      - name: Install the app and check its window opens
+        shell: pwsh
+        run: ./.github/windows_smoke.ps1
+
       - uses: actions/upload-artifact@v4
         with:
           name: windows
