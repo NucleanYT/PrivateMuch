@@ -105,8 +105,7 @@ app.whenReady().then(() => {
     title: 'PrivateMuch',
     backgroundColor: INK,
     icon: path.join(__dirname, 'web', 'icons', 'icon-512.png'),
-    titleBarStyle: 'hidden',
-    titleBarOverlay: { color: INK, symbolColor: '#8FA29F', height: TOOLBAR },
+    titleBarStyle: 'hidden', // the top bar draws its own minimize / maximize / close buttons
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -120,6 +119,8 @@ app.whenReady().then(() => {
   // leave PrivateMuch running with nothing on screen.
   setTimeout(() => { if (!win.isDestroyed() && !win.isVisible()) win.show(); }, 3000);
   win.on('resize', layout);
+  win.on('maximize', sendState);
+  win.on('unmaximize', sendState);
   win.webContents.on('before-input-event', (event, input) => {
     if (shortcut(input, null)) event.preventDefault();
   });
@@ -330,6 +331,7 @@ function sendState() {
       engine: store.engine,
       engines: Object.values(filter.ENGINES).map(({ id, title, description }) => ({ id, title, description })),
       version: app.getVersion(),
+      maximized: win.isMaximized(),
     });
   });
 }
@@ -371,6 +373,13 @@ ipcMain.on('new-tab', () => newTab());
 ipcMain.on('switch-tab', (event, id) => { const tab = tabs.find((t) => t.id === id); if (tab) switchTo(tab); });
 ipcMain.on('close-tab', (event, id) => { const tab = tabs.find((t) => t.id === id); if (tab) closeTab(tab); });
 ipcMain.on('close-all-tabs', () => closeAllTabs());
+
+// The top bar's own minimize / maximize / close buttons.
+ipcMain.on('window', (event, action) => {
+  if (action === 'minimize') win.minimize();
+  else if (action === 'maximize') win.isMaximized() ? win.unmaximize() : win.maximize();
+  else if (action === 'close') win.close();
+});
 
 // The tab overview, Bookmarks and Settings cover the page, so the page steps aside while one is open.
 ipcMain.handle('overlay', async (event, open) => {

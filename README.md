@@ -49,6 +49,7 @@ The same page and the same private browser, built for a mouse and keyboard. One 
 - Keyboard: Ctrl+T new tab, Ctrl+W close tab, Ctrl+Tab next tab, Ctrl+L address bar, Ctrl+D bookmark, Alt+Left / Alt+Right back and forward, F5 reload, Ctrl+plus / minus / 0 zoom, Esc closes a screen.
 - Settings → Check for updates downloads the newest build and installs it.
 - Opening PrivateMuch while it's already open brings that window to the front.
+- Its own minimize, maximize and close buttons, with the same springy feel as the rest of the app.
 
 ## Updating the app
 

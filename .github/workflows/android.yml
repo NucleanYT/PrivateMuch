@@ -82,6 +82,14 @@ jobs:
         shell: pwsh
         run: ./.github/windows_smoke.ps1
 
+      - name: Click the window buttons with the real mouse
+        shell: pwsh
+        run: ./.github/windows_buttons.ps1
+
+      - name: Update over the running app, like Check for updates
+        shell: pwsh
+        run: ./.github/windows_update.ps1
+
       - uses: actions/upload-artifact@v4
         with:
           name: windows

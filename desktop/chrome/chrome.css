@@ -13,8 +13,8 @@
   --spring: cubic-bezier(.34, 1.56, .64, 1);
   --ease-out: cubic-bezier(.2, .8, .2, 1);
   --font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
-  /* Room for Windows' own minimize / maximize / close buttons at the top right. */
-  --controls: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
+  /* Room for the minimize / maximize / close buttons at the top right. */
+  --controls: 136px;
   color-scheme: dark;
 }
 
@@ -82,6 +82,31 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
   position: absolute; inset: 0; background: var(--teal); transform-origin: 0 50%; transform: scaleX(0); opacity: 0;
   transition: transform .25s var(--ease-out), opacity .3s .15s;
 }
+
+/* ---------- Minimize / maximize / close ---------- */
+.window {
+  position: fixed; top: 0; right: 0; z-index: 8; height: 52px; display: flex; align-items: center; gap: 2px;
+  padding-right: 8px; -webkit-app-region: no-drag;
+}
+.window::before { content: ""; width: 1px; height: 20px; margin-right: 6px; background: var(--line); } /* sets them apart from the app's buttons */
+.win {
+  width: 38px; height: 34px; border: 0; border-radius: 10px; padding: 0; display: grid; place-items: center;
+  background: transparent; color: var(--fg); cursor: pointer;
+  transition: transform .45s var(--spring), background .2s, color .2s;
+}
+.win svg { width: 18px; height: 18px; stroke-width: 1.8; overflow: visible; }
+.win svg * { transform-box: fill-box; transform-origin: center; transition: transform .45s var(--spring), opacity .25s; }
+.win:hover { background: var(--surface-2); }
+.win:active { transform: scale(.88); }
+.win:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+#minimize:hover path { transform: translateY(2.5px); }       /* the line dips toward the taskbar */
+#maximize:hover .front { transform: scale(1.12); }           /* the square grows a little */
+#maximize .behind { opacity: 0; }
+#maximize.max .front { transform: translate(-1.5px, 1.5px) scale(.78); } /* maximized: two squares, for restore */
+#maximize.max .behind { opacity: 1; }
+#maximize.max:hover .front { transform: translate(-1.5px, 1.5px) scale(.86); }
+.win.close:hover { background: #d9434b; color: #fff; }
+.win.close:hover path { transform: rotate(90deg); }          /* the x turns a quarter */
 
 /* ---------- Screens (tab overview, bookmarks, settings) ---------- */
 .overlay {

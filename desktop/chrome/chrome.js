@@ -35,6 +35,10 @@
     const bookmark = $('#bookmark');
     bookmark.classList.toggle('on', state.bookmarked); // fills teal when the open page has a bookmark
     bookmark.title = state.bookmarked ? 'Bookmarks (this page is bookmarked)' : 'Bookmarks (Ctrl+D adds this page)';
+    const maximize = $('#maximize');
+    maximize.classList.toggle('max', state.maximized); // two squares while maximized: click to restore
+    maximize.title = state.maximized ? 'Restore' : 'Maximize';
+    maximize.setAttribute('aria-label', maximize.title);
 
     const lock = $('#lock');
     lock.className = 'lock' + (now.onHome || now.blocked ? ' search' : now.secure ? '' : ' open');
@@ -88,6 +92,9 @@
   $('#tabs').addEventListener('click', () => openScreen('tabs'));
   $('#bookmark').addEventListener('click', () => openScreen('bookmarks'));
   $('#settings').addEventListener('click', () => openScreen('settings'));
+  $('#minimize').addEventListener('click', () => pm.windowControl('minimize'));
+  $('#maximize').addEventListener('click', () => pm.windowControl('maximize'));
+  $('#close-window').addEventListener('click', () => pm.windowControl('close'));
 
   pm.onFocusAddress(() => { closeScreen(); url.focus(); });
 
