@@ -42,5 +42,5 @@ jobs:
           gh release delete latest --yes --cleanup-tag || true
           gh release create latest PrivateMuch.apk \
             --target "$GITHUB_SHA" \
-            --title "PrivateMuch (latest build)" \
+            --title "PrivateMuch build ${GITHUB_RUN_NUMBER}" \
             --notes "Download PrivateMuch.apk below and open it on your Android phone to install. Built from ${GITHUB_SHA::7}."

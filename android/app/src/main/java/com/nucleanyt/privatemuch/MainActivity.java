@@ -3,16 +3,23 @@ package com.nucleanyt.privatemuch;
 import android.animation.LayoutTransition;
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.OvershootInterpolator;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.webkit.CookieManager;
@@ -22,6 +29,7 @@ import android.webkit.WebStorage;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebViewDatabase;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -40,6 +48,8 @@ public class MainActivity extends Activity {
     private LinearLayout bar;      // shown only while a website is open
     private View divider;
     private TextView site;
+    private TextView updateButton; // shown only on the home page
+    private Updater updater;
     private boolean clearHistoryOnHome;
 
     @Override
@@ -139,8 +149,49 @@ public class MainActivity extends Activity {
 
         root.addView(bar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)));
         root.addView(divider, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1));
-        root.addView(web, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+
+        FrameLayout content = new FrameLayout(this);
+        content.addView(web, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        updateButton = buildUpdateButton();
+        updater = new Updater(this, updateButton);
+        FrameLayout.LayoutParams corner = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.END);
+        corner.setMargins(0, dp(10), dp(12), 0);
+        content.addView(updateButton, corner);
+
+        root.addView(content, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         return root;
+    }
+
+    /** A small pill in the top-right corner of the home page. */
+    private TextView buildUpdateButton() {
+        TextView b = new TextView(this);
+        b.setText("Update");
+        b.setContentDescription("Check for updates");
+        b.setTextColor(Color.parseColor("#8FA29F"));
+        b.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        b.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        b.setGravity(Gravity.CENTER_VERTICAL);
+        b.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_update, 0, 0, 0);
+        b.setCompoundDrawablePadding(dp(6));
+        b.setPadding(dp(12), dp(8), dp(14), dp(8));
+
+        GradientDrawable pill = new GradientDrawable();
+        pill.setColor(Color.parseColor("#E6131B1E"));
+        pill.setCornerRadius(dp(18));
+        pill.setStroke(dp(1), Color.parseColor("#24333A"));
+        b.setBackground(new RippleDrawable(ColorStateList.valueOf(Color.parseColor("#4035D0BF")), pill, null));
+
+        b.setOnClickListener(v -> updater.start());
+        b.setOnTouchListener((v, e) -> { // gentle squish and bounce back
+            if (e.getActionMasked() == MotionEvent.ACTION_DOWN) {
+                v.animate().scaleX(0.92f).scaleY(0.92f).setDuration(120).setInterpolator(new DecelerateInterpolator());
+            } else if (e.getActionMasked() == MotionEvent.ACTION_UP || e.getActionMasked() == MotionEvent.ACTION_CANCEL) {
+                v.animate().scaleX(1f).scaleY(1f).setDuration(450).setInterpolator(new OvershootInterpolator(3f));
+            }
+            return false;
+        });
+        return b;
     }
 
     private void updateBar(String url) {
@@ -149,6 +200,7 @@ public class MainActivity extends Activity {
         if (bar.getVisibility() != visibility) {
             bar.setVisibility(visibility);
             divider.setVisibility(visibility);
+            updateButton.setVisibility(onHome ? View.VISIBLE : View.GONE);
         }
         if (!onHome) {
             String host = Uri.parse(url).getHost();
@@ -174,6 +226,12 @@ public class MainActivity extends Activity {
         } else {
             super.onBackPressed();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updater.resume();
     }
 
     @Override
