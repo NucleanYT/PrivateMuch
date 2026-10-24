@@ -27,14 +27,13 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebViewDatabase;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,7 +45,6 @@ import java.util.List;
  */
 public class MainActivity extends Activity {
 
-    private static final String HOME = Tab.HOME;
     private static final int MAX_TABS = 12; // each tab is a whole WebView, so keep memory in check
     private static final String BLOCKED_PAGE = "<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'>"
             + "<body style='margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;box-sizing:border-box;"
@@ -60,21 +58,25 @@ public class MainActivity extends Activity {
     private FrameLayout content;   // holds the current tab's WebView
     private AddressBar addressBar; // shown only while a website is open
     private BottomBar bottomBar;   // Back, Forward, Tabs, New tab; also only while a website is open
-    private LinearLayout homeButtons; // Tabs + Update, shown only on the home page
+    private LinearLayout homeLeft;  // Tabs + Settings, top-left of the home page
+    private View homeRight;         // Update, top-right of the home page
     private TextView homeTabsButton;
     private TextView updateButton;
     private Updater updater;
     private TabsView tabsView;     // the tab overview while it's open
+    private SettingsView settingsView; // settings while they're open
+    private Engine engine;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        engine = Engine.load(this);
         Tab first = new Tab(createWebView());
         tabs.add(first);
         wipe(first.web); // start clean, even if the app was killed last time before it could clean up
         setContentView(buildLayout());
         switchTo(first);
-        first.web.loadUrl(HOME); // never restore a previous session
+        first.web.loadUrl(engine.homeUrl()); // never restore a previous session
     }
 
     private WebView createWebView() {
@@ -109,13 +111,13 @@ public class MainActivity extends Activity {
                 // Stay inside the app for web pages; ignore app links (intent:, market:, tel: ...).
                 if (!("https".equals(scheme) || "http".equals(scheme))) return true;
                 if (request.isForMainFrame()) {
-                    String typedAddress = UrlInput.fromDuckDuckGoSearch(request.getUrl().toString());
-                    if (typedAddress != null) { // a web address typed into DuckDuckGo's box opens the site
+                    String typedAddress = UrlInput.fromSearchBox(request.getUrl().toString());
+                    if (typedAddress != null) { // a web address typed into the search engine's box opens the site
                         view.loadUrl(typedAddress);
                         return true;
                     }
                     String safe = ContentFilter.withSafeSearch(request.getUrl().toString());
-                    if (safe != null) { // every DuckDuckGo search gets strict Safe Search
+                    if (safe != null) { // every DuckDuckGo and Brave search gets strict Safe Search
                         view.loadUrl(safe);
                         return true;
                     }
@@ -148,7 +150,7 @@ public class MainActivity extends Activity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 Tab tab = tabFor(view);
-                if (tab != null && tab.clearHistoryOnHome && HOME.equals(url)) {
+                if (tab != null && tab.clearHistoryOnHome && url != null && url.startsWith(Tab.HOME)) {
                     view.clearHistory(); // after Home, Back doesn't reopen the site
                     tab.clearHistoryOnHome = false;
                 }
@@ -169,7 +171,7 @@ public class MainActivity extends Activity {
         return web;
     }
 
-    /** The address bar above the page, the Tabs + Update buttons on the home page, and room for the tab overview. */
+    /** The address bar above the page, the buttons on the home page, and room for the tab overview and settings. */
     private View buildLayout() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -187,21 +189,28 @@ public class MainActivity extends Activity {
         root.addView(addressBar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         content = new FrameLayout(this);
-        homeButtons = new LinearLayout(this);
-        homeButtons.setOrientation(LinearLayout.HORIZONTAL);
-        homeButtons.setGravity(Gravity.CENTER_VERTICAL);
+        // Tabs and Settings on the left, Update on the right, so the PrivateMuch name in between stays clear.
+        homeLeft = new LinearLayout(this);
+        homeLeft.setOrientation(LinearLayout.HORIZONTAL);
+        homeLeft.setGravity(Gravity.CENTER_VERTICAL);
         homeTabsButton = AddressBar.tabsButton(this, true);
         homeTabsButton.setOnClickListener(v -> showTabs());
         LinearLayout.LayoutParams tabsParams = new LinearLayout.LayoutParams(dp(34), dp(34));
         tabsParams.setMarginEnd(dp(8));
-        homeButtons.addView(homeTabsButton, tabsParams);
+        homeLeft.addView(homeTabsButton, tabsParams);
+        homeLeft.addView(buildSettingsButton(), new LinearLayout.LayoutParams(dp(34), dp(34)));
+        FrameLayout.LayoutParams leftCorner = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.START);
+        leftCorner.setMargins(dp(12), dp(10), 0, 0);
+        content.addView(homeLeft, leftCorner);
+
         updateButton = buildUpdateButton();
         updater = new Updater(this, updateButton);
-        homeButtons.addView(updateButton);
+        homeRight = updateButton;
         FrameLayout.LayoutParams corner = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.END);
         corner.setMargins(0, dp(10), dp(12), 0);
-        content.addView(homeButtons, corner);
+        content.addView(updateButton, corner);
         root.addView(content, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
         bottomBar = new BottomBar(this, new BottomBar.Listener() {
@@ -242,6 +251,49 @@ public class MainActivity extends Activity {
         return b;
     }
 
+    /** A rounded square with the settings icon, matching the tabs button next to it. */
+    private View buildSettingsButton() {
+        ImageButton b = new ImageButton(this);
+        b.setImageResource(R.drawable.ic_settings);
+        b.setContentDescription("Settings");
+        GradientDrawable square = new GradientDrawable();
+        square.setCornerRadius(dp(9));
+        square.setColor(Color.parseColor("#E6131B1E"));
+        square.setStroke(dp(1), Color.parseColor("#24333A"));
+        b.setBackground(new RippleDrawable(ColorStateList.valueOf(Color.parseColor("#4035D0BF")), square, null));
+        b.setOnClickListener(v -> showSettings());
+        AddressBar.addSpringPress(b);
+        return b;
+    }
+
+    // ---------- Settings ----------
+
+    private void showSettings() {
+        if (settingsView != null) return;
+        settingsView = new SettingsView(this, engine, new SettingsView.Listener() {
+            @Override public void onEngine(Engine picked) { setEngine(picked); }
+            @Override public void onDismiss() { hideSettings(); }
+        });
+        screen.addView(settingsView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+    }
+
+    private void hideSettings() {
+        if (settingsView == null) return;
+        SettingsView closing = settingsView;
+        settingsView = null;
+        closing.dismiss(() -> screen.removeView(closing));
+    }
+
+    /** Saves the choice and reloads every tab that's on the home page so it shows the new engine. */
+    private void setEngine(Engine picked) {
+        if (picked == engine) return;
+        engine = picked;
+        engine.save(this);
+        for (Tab tab : tabs) {
+            if (tab.onHome()) tab.web.loadUrl(engine.homeUrl());
+        }
+    }
+
     // ---------- Tabs ----------
 
     private Tab tabFor(WebView view) {
@@ -263,7 +315,7 @@ public class MainActivity extends Activity {
         Tab tab = new Tab(createWebView());
         tabs.add(tab);
         switchTo(tab);
-        tab.web.loadUrl(HOME);
+        tab.web.loadUrl(engine.homeUrl());
     }
 
     private void switchTo(Tab tab) {
@@ -299,6 +351,17 @@ public class MainActivity extends Activity {
         updateTabCount();
     }
 
+    /** Closes every tab and starts over with one fresh one. */
+    private void closeAllTabs() {
+        current = null;
+        for (Tab tab : tabs) {
+            content.removeView(tab.web);
+            tab.web.destroy();
+        }
+        tabs.clear();
+        newTab();
+    }
+
     private void updateTabCount() {
         bottomBar.setTabCount(tabs.size());
         homeTabsButton.setText(String.valueOf(tabs.size()));
@@ -313,6 +376,7 @@ public class MainActivity extends Activity {
             @Override public void onSelect(Tab tab) { switchTo(tab); hideTabs(); }
             @Override public void onClose(Tab tab) { closeTab(tab); if (tabsView != null) tabsView.refresh(current); }
             @Override public void onNewTab() { newTab(); hideTabs(); }
+            @Override public void onCloseAll() { closeAllTabs(); hideTabs(); }
             @Override public void onDismiss() { hideTabs(); }
         });
         screen.addView(tabsView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -334,7 +398,8 @@ public class MainActivity extends Activity {
             if (onHome) addressBar.stopEditing();
             addressBar.setVisibility(visibility);
             bottomBar.setVisibility(visibility);
-            homeButtons.setVisibility(onHome ? View.VISIBLE : View.GONE);
+            homeLeft.setVisibility(onHome ? View.VISIBLE : View.GONE);
+            homeRight.setVisibility(onHome ? View.VISIBLE : View.GONE);
         }
         if (!onHome) addressBar.setUrl(url);
         bottomBar.setNavigation(current != null && current.web.canGoBack(), current != null && current.web.canGoForward());
@@ -354,20 +419,12 @@ public class MainActivity extends Activity {
             return;
         }
         addressBar.stopEditing();
-        current.web.loadUrl(address != null ? address : searchUrl(text));
-    }
-
-    private static String searchUrl(String text) {
-        try {
-            return "https://duckduckgo.com/?q=" + URLEncoder.encode(text, "UTF-8") + "&kp=1"; // kp=1: strict Safe Search
-        } catch (UnsupportedEncodingException e) {
-            throw new IllegalStateException(e); // UTF-8 is always available
-        }
+        current.web.loadUrl(address != null ? address : engine.searchUrl(text));
     }
 
     private void goHome() {
         current.clearHistoryOnHome = true;
-        current.web.loadUrl(HOME);
+        current.web.loadUrl(engine.homeUrl());
     }
 
     private int dp(int value) {
@@ -379,7 +436,9 @@ public class MainActivity extends Activity {
     @Override
     @SuppressWarnings("deprecation")
     public void onBackPressed() {
-        if (tabsView != null) {
+        if (settingsView != null) {
+            hideSettings();
+        } else if (tabsView != null) {
             hideTabs();
         } else if (addressBar.isEditing()) {
             addressBar.stopEditing();
