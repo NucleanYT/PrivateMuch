@@ -5,6 +5,7 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.RippleDrawable;
 import android.net.Uri;
@@ -25,6 +26,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 /**
  * The top bar shown while a website is open: Home, then a rounded address field you can type into
@@ -36,6 +38,7 @@ final class AddressBar extends LinearLayout {
         void onHome();
         void onSubmit(String typed);
         void onReload();
+        void onEditing(boolean editing);
     }
 
     private static final int INK = Color.parseColor("#0B1012");
@@ -172,6 +175,7 @@ final class AddressBar extends LinearLayout {
     }
 
     private void showEditing(boolean editing) {
+        listener.onEditing(editing);
         field.setText(editing ? url : displayName(url));
         if (editing) field.post(field::selectAll);
         action.setImageResource(editing ? R.drawable.ic_clear : R.drawable.ic_reload);
@@ -203,6 +207,27 @@ final class AddressBar extends LinearLayout {
         mask.setShape(GradientDrawable.OVAL);
         mask.setColor(Color.WHITE);
         return mask;
+    }
+
+    /**
+     * The tabs button: a rounded square with the number of open tabs, like most phone browsers.
+     * The home page uses the filled version so it stands out over the page.
+     */
+    static TextView tabsButton(Context context, boolean filled) {
+        TextView b = new TextView(context);
+        b.setGravity(Gravity.CENTER);
+        b.setTextColor(TEXT);
+        b.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        b.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+        b.setText("1");
+        float density = context.getResources().getDisplayMetrics().density;
+        GradientDrawable square = new GradientDrawable();
+        square.setCornerRadius(9 * density);
+        square.setColor(filled ? Color.parseColor("#E6131B1E") : Color.TRANSPARENT);
+        square.setStroke(Math.round(1.8f * density), filled ? LINE : Color.parseColor("#8FA29F"));
+        b.setBackground(new RippleDrawable(ColorStateList.valueOf(Color.parseColor("#4035D0BF")), square, null));
+        addSpringPress(b);
+        return b;
     }
 
     /** "duckduckgo.com" instead of the full address, like most phone browsers. */
