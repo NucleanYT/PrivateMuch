@@ -229,7 +229,8 @@ h1 {
 }
 @keyframes ripple { to { transform: scale(14); opacity: 0; } }
 
-.fine { margin: -10px 0 0; text-align: center; font-size: 13px; color: var(--faint); }
+.fine { margin: -10px 0 0; text-align: center; font-size: 13px; color: var(--faint); transition: color .3s; }
+.fine.warn { color: var(--teal); animation: nudge .6s var(--spring); }
 
 /* ---------- 3D info card ---------- */
 .card-wrap { perspective: 900px; padding-block: 6px; }
@@ -683,6 +684,31 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
   }
   requestAnimationFrame(frame);
 
+  /* ================= Adult content filter ================= */
+  // BLOCKLIST-START (keep identical to BLOCKED_WORDS in android/.../ContentFilter.java)
+  const BLOCKED_WORDS = [
+    'porn', 'porno', 'pornography', 'pornographic', 'xxx', 'nsfw', 'nude', 'nudes', 'nudity',
+    'boob', 'boobs', 'boobies', 'tits', 'titties', 'titty', 'pussy', 'hentai', 'ecchi', 'rule34', 'rule 34',
+    'milf', 'sexy', 'sexting', 'sex video', 'sex tape', 'sex cam', 'sex chat', 'erotic', 'erotica',
+    'fetish', 'bdsm', 'lewd', 'horny', 'orgasm', 'masturbate', 'masturbating', 'masturbation',
+    'blowjob', 'handjob', 'cumshot', 'deepthroat', 'gangbang', 'threesome', 'dick pic', 'strip club',
+    'camgirl', 'cam girl', 'onlyfans', 'fansly', 'pornhub', 'xvideos', 'xnxx', 'xhamster', 'redtube',
+    'youporn', 'brazzers', 'chaturbate', 'spankbang', 'playboy',
+  ];
+  // BLOCKLIST-END
+
+  const LOOKALIKES = { 0: 'o', 1: 'i', '!': 'i', 3: 'e', 4: 'a', '@': 'a', 5: 's', $: 's', 7: 't' };
+  // Lowercase, accents removed, look-alike digits and symbols turned into letters, spaced-out letters joined.
+  function normalize(text) {
+    return text.normalize('NFKD').replace(/\p{M}+/gu, '').toLowerCase()
+      .replace(/[013457!@$]/g, (c) => LOOKALIKES[c] || c)
+      .replace(/[^a-z]+/g, ' ').trim()
+      .replace(/\b(?:[a-z] )+[a-z]\b/g, (m) => m.replace(/ /g, '')); // "p o r n" -> "porn"
+  }
+  // Whole words only (plus plurals), so "class" or "Essex" are never blocked.
+  const BLOCKED = new RegExp('(?:^| )(?:' + BLOCKED_WORDS.map(normalize).join('|') + ')(?:e?s)?(?= |$)');
+  const isBlocked = (text) => BLOCKED.test(normalize(text));
+
   /* ================= Search (nothing kept) ================= */
   const form = $('#search');
   const q = $('#q');
@@ -707,6 +733,7 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
     chat: { placeholder: 'Ask Duck.ai', label: 'Ask Duck.ai privately', fine: 'Chats open on Duck.ai. Nothing is stored here.' },
   };
   let mode = 'search'; // never remembered between visits
+  let warnTimer = 0;
 
   function setMode(next, focusIt) {
     mode = next;
@@ -721,6 +748,7 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
     q.placeholder = COPY[next].placeholder;
     q.setAttribute('aria-label', COPY[next].label);
     fine.textContent = COPY[next].fine;
+    fine.classList.remove('warn');
     restart('tick');
   }
   modeEl.addEventListener('click', (e) => {
@@ -745,9 +773,17 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
       if (mode === 'chat') { openSearch('https://duck.ai/'); return; } // empty chat: just open Duck.ai
       restart('nudge'); q.focus(); return;
     }
+    if (isBlocked(term)) {
+      wipe();
+      fine.textContent = 'Adult searches are blocked.';
+      fine.classList.remove('warn'); void fine.offsetWidth; fine.classList.add('warn');
+      clearTimeout(warnTimer);
+      warnTimer = setTimeout(() => { fine.classList.remove('warn'); fine.textContent = COPY[mode].fine; }, 3500);
+      return;
+    }
     restart('sent');
-    // "!ai" is DuckDuckGo's shortcut that hands the text to Duck.ai.
-    openSearch('https://duckduckgo.com/?q=' + encodeURIComponent(mode === 'chat' ? '!ai ' + term : term));
+    // "!ai" is DuckDuckGo's shortcut that hands the text to Duck.ai; kp=1 is strict Safe Search.
+    openSearch('https://duckduckgo.com/?q=' + encodeURIComponent(mode === 'chat' ? '!ai ' + term : term) + '&kp=1');
     setTimeout(() => { wipe(); q.blur(); form.classList.remove('sent'); }, 350);
   });
   // Never keep the typed text, even when the browser restores the page from its back/forward cache.

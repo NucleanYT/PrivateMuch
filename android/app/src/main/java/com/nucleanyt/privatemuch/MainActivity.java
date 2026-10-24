@@ -24,6 +24,7 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.webkit.CookieManager;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebStorage;
 import android.webkit.WebView;
@@ -34,7 +35,10 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 
 /**
  * Shows the PrivateMuch page (bundled in the app) in a WebView that keeps nothing:
@@ -43,6 +47,11 @@ import java.io.File;
 public class MainActivity extends Activity {
 
     private static final String HOME = "file:///android_asset/index.html";
+    private static final String BLOCKED_PAGE = "<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'>"
+            + "<body style='margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;box-sizing:border-box;"
+            + "background:#0b1012;color:#e2ebe9;font:16px/1.5 sans-serif;text-align:center'>"
+            + "<div><div style='font-size:22px;font-weight:600;margin-bottom:6px'>Blocked</div>"
+            + "<div style='color:#8fa29f'>PrivateMuch blocks adult content.</div></div>";
 
     private WebView web;
     private LinearLayout bar;      // shown only while a website is open
@@ -85,7 +94,27 @@ public class MainActivity extends Activity {
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String scheme = request.getUrl().getScheme();
                 // Stay inside the app for web pages; ignore app links (intent:, market:, tel: ...).
-                return !("https".equals(scheme) || "http".equals(scheme));
+                if (!("https".equals(scheme) || "http".equals(scheme))) return true;
+                if (request.isForMainFrame()) {
+                    String safe = ContentFilter.withSafeSearch(request.getUrl().toString());
+                    if (safe != null) { // every DuckDuckGo search gets strict Safe Search
+                        view.loadUrl(safe);
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                // Runs for every page, image, frame and script, so adult sites can't load any part.
+                if (!ContentFilter.isBlockedUrl(request.getUrl().toString())) return null;
+                if (request.isForMainFrame()) {
+                    return new WebResourceResponse("text/html", "utf-8",
+                            new ByteArrayInputStream(BLOCKED_PAGE.getBytes(StandardCharsets.UTF_8)));
+                }
+                return new WebResourceResponse("text/plain", "utf-8", 403, "Blocked",
+                        Collections.emptyMap(), new ByteArrayInputStream(new byte[0]));
             }
 
             @Override
