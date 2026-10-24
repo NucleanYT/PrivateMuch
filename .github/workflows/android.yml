@@ -82,6 +82,11 @@ jobs:
         shell: pwsh
         run: ./.github/windows_smoke.ps1
 
+      - name: Try the ways people install and open it (temporary)
+        continue-on-error: true
+        shell: pwsh
+        run: ./.github/windows_experiments.ps1
+
       - uses: actions/upload-artifact@v4
         with:
           name: windows
