@@ -116,6 +116,9 @@ app.whenReady().then(() => {
   });
   win.loadFile(path.join(__dirname, 'chrome', 'index.html'));
   win.once('ready-to-show', () => win.show());
+  // If the first frame never arrives (a stuck graphics driver, for one), show the window anyway rather than
+  // leave PrivateMuch running with nothing on screen.
+  setTimeout(() => { if (!win.isDestroyed() && !win.isVisible()) win.show(); }, 3000);
   win.on('resize', layout);
   win.webContents.on('before-input-event', (event, input) => {
     if (shortcut(input, null)) event.preventDefault();
