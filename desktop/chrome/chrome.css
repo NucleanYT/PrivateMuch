@@ -86,7 +86,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 /* ---------- Screens (tab overview, bookmarks, settings) ---------- */
 .overlay {
   position: fixed; inset: 0; z-index: 5; overflow-y: auto; overflow-x: hidden;
-  background: linear-gradient(to bottom, #11201f, var(--ink) 220px);
+  background: linear-gradient(to bottom, #11201f 52px, var(--ink) 220px); /* solid behind the window buttons */
   animation: open .32s var(--spring);
 }
 .overlay.closing { animation: close .2s var(--ease-out) forwards; }
@@ -97,7 +97,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .head {
   position: sticky; top: 0; z-index: 1; height: 64px; display: flex; align-items: center; gap: 12px;
   padding: 0 calc(16px + var(--controls)) 0 14px;
-  background: linear-gradient(to bottom, #11201f 60%, rgba(17, 32, 31, 0)); -webkit-app-region: drag;
+  background: linear-gradient(to bottom, #11201f 52px, rgba(17, 32, 31, 0)); -webkit-app-region: drag;
 }
 .head > * { -webkit-app-region: no-drag; }
 .head .titles { flex: 1; -webkit-app-region: drag; }
