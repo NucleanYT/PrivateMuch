@@ -153,6 +153,7 @@ final class TabsView extends FrameLayout {
         for (int i = 0; i < n; i += 2) {
             LinearLayout row = new LinearLayout(getContext());
             row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setClipChildren(false); // a card's bounce may reach past its edge for a moment; never cut it off
             for (int j = i; j < i + 2; j++) {
                 LinearLayout.LayoutParams cell = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
                 cell.setMargins(dp(6), dp(6), dp(6), dp(6));
@@ -273,7 +274,7 @@ final class TabsView extends FrameLayout {
         card.addView(close, closeParams);
 
         card.setOnClickListener(v -> listener.onSelect(tab));
-        AddressBar.addSpringPress(card);
+        AddressBar.addSpringPress(card, 0.96f);
 
         // Cards rise in one after another and settle with a small bounce.
         card.setAlpha(0f);
