@@ -21,7 +21,6 @@ $exe = Join-Path $dir 'PrivateMuch.exe'
 $marker = Join-Path $dir 'LICENSE.electron.txt'
 $original = Get-Content $marker -Raw
 $setup = Join-Path $env:TEMP 'PrivateMuch-Setup-test.exe'
-Copy-Item "$Dist/PrivateMuch-Setup.exe" $setup -Force
 
 function Windows-Of([string[]]$Names) {
   $ids = @(Get-Process -Name $Names -ErrorAction SilentlyContinue | ForEach-Object { [uint32]$_.Id })
@@ -48,6 +47,8 @@ foreach ($variant in @('--updated')) {
     Set-Content $marker 'old version' -NoNewline
     Start-Process $exe
     Start-Sleep -Seconds 12
+    # Like Check for updates: the installer is downloaded while the app is open (it deletes old ones when it starts).
+    Copy-Item "$Dist/PrivateMuch-Setup.exe" $setup -Force
     $p = if ($variant) { Start-Process $setup -ArgumentList $variant -PassThru } else { Start-Process $setup -PassThru }
     Start-Sleep -Milliseconds 600
     Get-Process -Name PrivateMuch -ErrorAction SilentlyContinue | ForEach-Object { [void]$_.CloseMainWindow() }
