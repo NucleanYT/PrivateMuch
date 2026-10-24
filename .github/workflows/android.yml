@@ -82,6 +82,11 @@ jobs:
         shell: pwsh
         run: ./.github/windows_smoke.ps1
 
+      - name: Try updating the way the app does (temporary)
+        continue-on-error: true
+        shell: pwsh
+        run: ./.github/windows_update_test.ps1
+
       - uses: actions/upload-artifact@v4
         with:
           name: windows
