@@ -36,32 +36,48 @@ import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 /**
- * Shows the PrivateMuch page (bundled in the app) in a WebView that keeps nothing:
+ * Shows the PrivateMuch page (bundled in the app) in tabs of WebViews that keep nothing:
  * cookies, site storage, cache, form data and history are wiped when the app starts and when it closes.
  */
 public class MainActivity extends Activity {
 
-    private static final String HOME = "file:///android_asset/index.html";
+    private static final String HOME = Tab.HOME;
+    private static final int MAX_TABS = 12; // each tab is a whole WebView, so keep memory in check
     private static final String BLOCKED_PAGE = "<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'>"
             + "<body style='margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;box-sizing:border-box;"
             + "background:#0b1012;color:#e2ebe9;font:16px/1.5 sans-serif;text-align:center'>"
             + "<div><div style='font-size:22px;font-weight:600;margin-bottom:6px'>Blocked</div>"
             + "<div style='color:#8fa29f'>PrivateMuch blocks adult content.</div></div>";
 
-    private WebView web;
+    private final List<Tab> tabs = new ArrayList<>();
+    private Tab current;
+    private FrameLayout screen;    // everything, with the tab overview drawn on top
+    private FrameLayout content;   // holds the current tab's WebView
     private AddressBar addressBar; // shown only while a website is open
-    private TextView updateButton; // shown only on the home page
+    private LinearLayout homeButtons; // Tabs + Update, shown only on the home page
+    private TextView homeTabsButton;
+    private TextView updateButton;
     private Updater updater;
-    private boolean clearHistoryOnHome;
+    private TabsView tabsView;     // the tab overview while it's open
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Tab first = new Tab(createWebView());
+        tabs.add(first);
+        wipe(first.web); // start clean, even if the app was killed last time before it could clean up
+        setContentView(buildLayout());
+        switchTo(first);
+        first.web.loadUrl(HOME); // never restore a previous session
+    }
 
-        web = new PrivateWebView(this);
+    private WebView createWebView() {
+        WebView web = new PrivateWebView(this);
         web.setBackgroundColor(Color.parseColor("#0B1012"));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // Keep the system autofill service from saving what is typed.
@@ -120,35 +136,39 @@ public class MainActivity extends Activity {
 
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                updateBar(url);
+                if (isCurrent(view)) updateBar(url);
             }
 
             @Override
             public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
-                updateBar(url); // also catches in-page navigation, like Duck.ai switching chats
+                if (isCurrent(view)) updateBar(url); // also catches in-page navigation, like Duck.ai switching chats
             }
 
             @Override
             public void onPageFinished(WebView view, String url) {
-                if (clearHistoryOnHome && HOME.equals(url)) {
-                    view.clearHistory(); // after Home, Back closes the app instead of reopening the site
-                    clearHistoryOnHome = false;
+                Tab tab = tabFor(view);
+                if (tab != null && tab.clearHistoryOnHome && HOME.equals(url)) {
+                    view.clearHistory(); // after Home, Back doesn't reopen the site
+                    tab.clearHistoryOnHome = false;
                 }
             }
         });
         web.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onProgressChanged(WebView view, int percent) {
-                addressBar.setProgress(percent);
+                if (isCurrent(view)) addressBar.setProgress(percent);
+            }
+
+            @Override
+            public void onReceivedTitle(WebView view, String title) {
+                Tab tab = tabFor(view);
+                if (tab != null) tab.title = title == null ? "" : title;
             }
         });
-
-        wipe(); // start clean, even if the app was killed last time before it could clean up
-        setContentView(buildLayout());
-        web.loadUrl(HOME); // never restore a previous session
+        return web;
     }
 
-    /** The address bar above the WebView, and the Update pill floating on the home page. */
+    /** The address bar above the page, the Tabs + Update buttons on the home page, and room for the tab overview. */
     private View buildLayout() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -158,22 +178,33 @@ public class MainActivity extends Activity {
         addressBar = new AddressBar(this, new AddressBar.Listener() {
             @Override public void onHome() { goHome(); }
             @Override public void onSubmit(String typed) { open(typed); }
-            @Override public void onReload() { web.reload(); }
+            @Override public void onReload() { current.web.reload(); }
+            @Override public void onTabs() { showTabs(); }
         });
         addressBar.setVisibility(View.GONE);
         root.addView(addressBar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        FrameLayout content = new FrameLayout(this);
-        content.addView(web, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        content = new FrameLayout(this);
+        homeButtons = new LinearLayout(this);
+        homeButtons.setOrientation(LinearLayout.HORIZONTAL);
+        homeButtons.setGravity(Gravity.CENTER_VERTICAL);
+        homeTabsButton = AddressBar.tabsButton(this, true);
+        homeTabsButton.setOnClickListener(v -> showTabs());
+        LinearLayout.LayoutParams tabsParams = new LinearLayout.LayoutParams(dp(34), dp(34));
+        tabsParams.setMarginEnd(dp(8));
+        homeButtons.addView(homeTabsButton, tabsParams);
         updateButton = buildUpdateButton();
         updater = new Updater(this, updateButton);
+        homeButtons.addView(updateButton);
         FrameLayout.LayoutParams corner = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.END);
         corner.setMargins(0, dp(10), dp(12), 0);
-        content.addView(updateButton, corner);
-
+        content.addView(homeButtons, corner);
         root.addView(content, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
-        return root;
+
+        screen = new FrameLayout(this);
+        screen.addView(root, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        return screen;
     }
 
     /** A small pill in the top-right corner of the home page. */
@@ -200,13 +231,98 @@ public class MainActivity extends Activity {
         return b;
     }
 
+    // ---------- Tabs ----------
+
+    private Tab tabFor(WebView view) {
+        for (Tab tab : tabs) {
+            if (tab.web == view) return tab;
+        }
+        return null;
+    }
+
+    private boolean isCurrent(WebView view) {
+        return current != null && current.web == view;
+    }
+
+    private void newTab() {
+        if (tabs.size() >= MAX_TABS) {
+            Toast.makeText(this, "You can have up to " + MAX_TABS + " tabs. Close one first.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Tab tab = new Tab(createWebView());
+        tabs.add(tab);
+        switchTo(tab);
+        tab.web.loadUrl(HOME);
+    }
+
+    private void switchTo(Tab tab) {
+        if (current == tab) return;
+        if (current != null) {
+            current.capturePreview();
+            current.web.onPause(); // background tabs stop their scripts and animations
+            content.removeView(current.web);
+        }
+        current = tab;
+        if (tab.web.getParent() == null) {
+            content.addView(tab.web, 0, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        }
+        tab.web.onResume();
+        updateBar(tab.url());
+        addressBar.setProgress(tab.web.getProgress());
+        updateTabCount();
+    }
+
+    private void closeTab(Tab tab) {
+        int index = tabs.indexOf(tab);
+        if (index < 0) return;
+        boolean wasCurrent = tab == current;
+        if (wasCurrent) current = null; // so switching away never touches the closed tab
+        tabs.remove(index);
+        content.removeView(tab.web);
+        tab.web.destroy();
+        if (tabs.isEmpty()) {
+            newTab(); // closing the last tab leaves a fresh one
+        } else if (wasCurrent) {
+            switchTo(tabs.get(Math.max(0, index - 1)));
+        }
+        updateTabCount();
+    }
+
+    private void updateTabCount() {
+        addressBar.setTabCount(tabs.size());
+        homeTabsButton.setText(String.valueOf(tabs.size()));
+        homeTabsButton.setContentDescription(tabs.size() == 1 ? "1 tab open" : tabs.size() + " tabs open");
+    }
+
+    private void showTabs() {
+        if (tabsView != null) return;
+        addressBar.stopEditing();
+        current.capturePreview();
+        tabsView = new TabsView(this, tabs, current, new TabsView.Listener() {
+            @Override public void onSelect(Tab tab) { switchTo(tab); hideTabs(); }
+            @Override public void onClose(Tab tab) { closeTab(tab); if (tabsView != null) tabsView.refresh(current); }
+            @Override public void onNewTab() { newTab(); hideTabs(); }
+            @Override public void onDismiss() { hideTabs(); }
+        });
+        screen.addView(tabsView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+    }
+
+    private void hideTabs() {
+        if (tabsView == null) return;
+        TabsView closing = tabsView;
+        tabsView = null;
+        closing.dismiss(() -> screen.removeView(closing));
+    }
+
+    // ---------- Address bar ----------
+
     private void updateBar(String url) {
-        boolean onHome = url == null || url.startsWith("file:///android_asset/");
+        boolean onHome = url == null || url.isEmpty() || url.startsWith("file:///android_asset/");
         int visibility = onHome ? View.GONE : View.VISIBLE;
         if (addressBar.getVisibility() != visibility) {
             if (onHome) addressBar.stopEditing();
             addressBar.setVisibility(visibility);
-            updateButton.setVisibility(onHome ? View.VISIBLE : View.GONE);
+            homeButtons.setVisibility(onHome ? View.VISIBLE : View.GONE);
         }
         if (!onHome) addressBar.setUrl(url);
     }
@@ -225,7 +341,7 @@ public class MainActivity extends Activity {
             return;
         }
         addressBar.stopEditing();
-        web.loadUrl(address != null ? address : searchUrl(text));
+        current.web.loadUrl(address != null ? address : searchUrl(text));
     }
 
     private static String searchUrl(String text) {
@@ -237,21 +353,27 @@ public class MainActivity extends Activity {
     }
 
     private void goHome() {
-        clearHistoryOnHome = true;
-        web.loadUrl(HOME);
+        current.clearHistoryOnHome = true;
+        current.web.loadUrl(HOME);
     }
 
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
+    // ---------- Lifecycle ----------
+
     @Override
     @SuppressWarnings("deprecation")
     public void onBackPressed() {
-        if (addressBar.isEditing()) {
+        if (tabsView != null) {
+            hideTabs();
+        } else if (addressBar.isEditing()) {
             addressBar.stopEditing();
-        } else if (web.canGoBack()) {
-            web.goBack();
+        } else if (current.web.canGoBack()) {
+            current.web.goBack();
+        } else if (tabs.size() > 1) {
+            closeTab(current); // at the start of a tab, Back closes it and returns to the one before
         } else {
             super.onBackPressed();
         }
@@ -265,15 +387,19 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        if (isFinishing()) {
-            wipe();
+        if (isFinishing() && !tabs.isEmpty()) {
+            wipe(tabs.get(0).web);
         }
-        web.destroy();
+        for (Tab tab : tabs) {
+            tab.web.destroy();
+        }
+        tabs.clear();
         super.onDestroy();
     }
 
+    /** Clears everything every tab could have left behind. Cookies, storage and cache are shared, so any one WebView will do. */
     @SuppressWarnings("deprecation")
-    private void wipe() {
+    private void wipe(WebView any) {
         CookieManager cookies = CookieManager.getInstance();
         cookies.removeAllCookies(null);
         cookies.flush();
@@ -281,9 +407,11 @@ public class MainActivity extends Activity {
         WebViewDatabase db = WebViewDatabase.getInstance(this);
         db.clearHttpAuthUsernamePassword();
         db.clearFormData();
-        web.clearCache(true);
-        web.clearHistory();
-        web.clearFormData();
+        any.clearCache(true);
+        for (Tab tab : tabs) {
+            tab.web.clearHistory();
+            tab.web.clearFormData();
+        }
         deleteContents(getCacheDir());
     }
 

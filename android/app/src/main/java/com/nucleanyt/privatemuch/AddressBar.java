@@ -5,6 +5,7 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.RippleDrawable;
 import android.net.Uri;
@@ -25,6 +26,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 /**
  * The top bar shown while a website is open: Home, then a rounded address field you can type into
@@ -36,6 +38,7 @@ final class AddressBar extends LinearLayout {
         void onHome();
         void onSubmit(String typed);
         void onReload();
+        void onTabs();
     }
 
     private static final int INK = Color.parseColor("#0B1012");
@@ -52,6 +55,7 @@ final class AddressBar extends LinearLayout {
     private final EditText field;
     private final ImageButton action;
     private final View progress;
+    private final TextView tabs;
     private ValueAnimator strokeAnimation;
     private String url = "";
 
@@ -125,6 +129,12 @@ final class AddressBar extends LinearLayout {
         LayoutParams pillParams = new LayoutParams(0, dp(42), 1f);
         pillParams.setMarginStart(dp(2));
         row.addView(pill, pillParams);
+
+        tabs = tabsButton(context, false);
+        tabs.setOnClickListener(v -> listener.onTabs());
+        LayoutParams tabsParams = new LayoutParams(dp(34), dp(34));
+        tabsParams.setMarginStart(dp(10));
+        row.addView(tabs, tabsParams);
         addView(row, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(58)));
 
         // A hairline under the bar, with the teal loading line drawn over it.
@@ -159,6 +169,11 @@ final class AddressBar extends LinearLayout {
             progress.animate().scaleX(1f).setDuration(160)
                     .withEndAction(() -> progress.animate().alpha(0f).setDuration(260));
         }
+    }
+
+    void setTabCount(int count) {
+        tabs.setText(count > 99 ? ":D" : String.valueOf(count));
+        tabs.setContentDescription(count == 1 ? "1 tab open" : count + " tabs open");
     }
 
     boolean isEditing() {
@@ -203,6 +218,27 @@ final class AddressBar extends LinearLayout {
         mask.setShape(GradientDrawable.OVAL);
         mask.setColor(Color.WHITE);
         return mask;
+    }
+
+    /**
+     * The tabs button: a rounded square with the number of open tabs, like most phone browsers.
+     * The home page uses the filled version so it stands out over the page.
+     */
+    static TextView tabsButton(Context context, boolean filled) {
+        TextView b = new TextView(context);
+        b.setGravity(Gravity.CENTER);
+        b.setTextColor(TEXT);
+        b.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        b.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+        b.setText("1");
+        float density = context.getResources().getDisplayMetrics().density;
+        GradientDrawable square = new GradientDrawable();
+        square.setCornerRadius(9 * density);
+        square.setColor(filled ? Color.parseColor("#E6131B1E") : Color.TRANSPARENT);
+        square.setStroke(Math.round(1.8f * density), filled ? LINE : Color.parseColor("#8FA29F"));
+        b.setBackground(new RippleDrawable(ColorStateList.valueOf(Color.parseColor("#4035D0BF")), square, null));
+        addSpringPress(b);
+        return b;
     }
 
     /** "duckduckgo.com" instead of the full address, like most phone browsers. */
