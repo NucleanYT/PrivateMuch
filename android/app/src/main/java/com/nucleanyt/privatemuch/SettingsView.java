@@ -94,7 +94,7 @@ final class SettingsView extends FrameLayout {
         }
 
         TextView note = new TextView(context);
-        note.setText("Your search engine and your bookmarks are the only things PrivateMuch remembers. Tabs, pages, cookies and site data are still wiped every time you close the app.");
+        note.setText("Your search engine and your bookmarks (just their addresses, as shortcuts) are the only things PrivateMuch remembers. Tabs, pages, cookies and site data are still wiped every time you close the app.");
         note.setTextColor(MUTED);
         note.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
         note.setLineSpacing(0, 1.2f);
