@@ -9,20 +9,16 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.RippleDrawable;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.DecelerateInterpolator;
-import android.view.animation.OvershootInterpolator;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.webkit.CookieManager;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -31,12 +27,14 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebViewDatabase;
 import android.widget.FrameLayout;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
@@ -54,9 +52,7 @@ public class MainActivity extends Activity {
             + "<div style='color:#8fa29f'>PrivateMuch blocks adult content.</div></div>";
 
     private WebView web;
-    private LinearLayout bar;      // shown only while a website is open
-    private View divider;
-    private TextView site;
+    private AddressBar addressBar; // shown only while a website is open
     private TextView updateButton; // shown only on the home page
     private Updater updater;
     private boolean clearHistoryOnHome;
@@ -140,49 +136,32 @@ public class MainActivity extends Activity {
                 }
             }
         });
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onProgressChanged(WebView view, int percent) {
+                addressBar.setProgress(percent);
+            }
+        });
 
         wipe(); // start clean, even if the app was killed last time before it could clean up
         setContentView(buildLayout());
         web.loadUrl(HOME); // never restore a previous session
     }
 
-    /** A slim top bar (Home + the site's name) above the WebView. */
+    /** The address bar above the WebView, and the Update pill floating on the home page. */
     private View buildLayout() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Color.parseColor("#0B1012"));
         root.setLayoutTransition(new LayoutTransition());
 
-        bar = new LinearLayout(this);
-        bar.setOrientation(LinearLayout.HORIZONTAL);
-        bar.setGravity(Gravity.CENTER_VERTICAL);
-        bar.setBackgroundColor(Color.parseColor("#131B1E"));
-        bar.setPadding(dp(4), 0, dp(16), 0);
-        bar.setVisibility(View.GONE);
-
-        ImageButton home = new ImageButton(this);
-        home.setImageResource(R.drawable.ic_home);
-        home.setContentDescription("Home");
-        TypedValue ripple = new TypedValue();
-        getTheme().resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, ripple, true);
-        home.setBackgroundResource(ripple.resourceId);
-        home.setOnClickListener(v -> goHome());
-        bar.addView(home, new LinearLayout.LayoutParams(dp(48), dp(48)));
-
-        site = new TextView(this);
-        site.setTextColor(Color.parseColor("#8FA29F"));
-        site.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-        site.setSingleLine(true);
-        site.setEllipsize(TextUtils.TruncateAt.END);
-        site.setPadding(dp(4), 0, 0, 0);
-        bar.addView(site, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-
-        divider = new View(this);
-        divider.setBackgroundColor(Color.parseColor("#24333A"));
-        divider.setVisibility(View.GONE);
-
-        root.addView(bar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)));
-        root.addView(divider, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1));
+        addressBar = new AddressBar(this, new AddressBar.Listener() {
+            @Override public void onHome() { goHome(); }
+            @Override public void onSubmit(String typed) { open(typed); }
+            @Override public void onReload() { web.reload(); }
+        });
+        addressBar.setVisibility(View.GONE);
+        root.addView(addressBar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         FrameLayout content = new FrameLayout(this);
         content.addView(web, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -217,29 +196,43 @@ public class MainActivity extends Activity {
         b.setBackground(new RippleDrawable(ColorStateList.valueOf(Color.parseColor("#4035D0BF")), pill, null));
 
         b.setOnClickListener(v -> updater.start());
-        b.setOnTouchListener((v, e) -> { // gentle squish and bounce back
-            if (e.getActionMasked() == MotionEvent.ACTION_DOWN) {
-                v.animate().scaleX(0.92f).scaleY(0.92f).setDuration(120).setInterpolator(new DecelerateInterpolator());
-            } else if (e.getActionMasked() == MotionEvent.ACTION_UP || e.getActionMasked() == MotionEvent.ACTION_CANCEL) {
-                v.animate().scaleX(1f).scaleY(1f).setDuration(450).setInterpolator(new OvershootInterpolator(3f));
-            }
-            return false;
-        });
+        AddressBar.addSpringPress(b);
         return b;
     }
 
     private void updateBar(String url) {
         boolean onHome = url == null || url.startsWith("file:///android_asset/");
         int visibility = onHome ? View.GONE : View.VISIBLE;
-        if (bar.getVisibility() != visibility) {
-            bar.setVisibility(visibility);
-            divider.setVisibility(visibility);
+        if (addressBar.getVisibility() != visibility) {
+            if (onHome) addressBar.stopEditing();
+            addressBar.setVisibility(visibility);
             updateButton.setVisibility(onHome ? View.VISIBLE : View.GONE);
         }
-        if (!onHome) {
-            String host = Uri.parse(url).getHost();
-            if (host != null && host.startsWith("www.")) host = host.substring(4);
-            site.setText(host == null ? "" : host);
+        if (!onHome) addressBar.setUrl(url);
+    }
+
+    /** What the address bar does with typed text: same rules as the home page's search box. */
+    private void open(String typed) {
+        String text = typed.trim();
+        if (text.isEmpty()) return;
+        if (ContentFilter.isBlockedText(text)) {
+            Toast.makeText(this, "Adult searches are blocked.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String address = UrlInput.toUrl(text);
+        if (address != null && ContentFilter.isBlockedUrl(address)) {
+            Toast.makeText(this, "Adult sites are blocked.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        addressBar.stopEditing();
+        web.loadUrl(address != null ? address : searchUrl(text));
+    }
+
+    private static String searchUrl(String text) {
+        try {
+            return "https://duckduckgo.com/?q=" + URLEncoder.encode(text, "UTF-8") + "&kp=1"; // kp=1: strict Safe Search
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException(e); // UTF-8 is always available
         }
     }
 
@@ -255,7 +248,9 @@ public class MainActivity extends Activity {
     @Override
     @SuppressWarnings("deprecation")
     public void onBackPressed() {
-        if (web.canGoBack()) {
+        if (addressBar.isEditing()) {
+            addressBar.stopEditing();
+        } else if (web.canGoBack()) {
             web.goBack();
         } else {
             super.onBackPressed();

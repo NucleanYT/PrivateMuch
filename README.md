@@ -25,6 +25,7 @@ The page sets no cookies, stores nothing on your device, loads nothing from othe
 The Android app goes further:
 
 - Search results and chats open inside the app, so they never reach your browser's history.
+- While a site is open, the top bar is an address bar: tap it to type a web address or a search. It has a lock for secure sites, reload, a loading line and a Home button. The keyboard isn't allowed to learn what you type there.
 - Cookies, site data, cache and history are wiped every time the app starts and closes.
 - Your keyboard is told not to learn what you type, autofill is off, and the app is never backed up.
 - Adult websites are blocked inside the app, and so are adult searches typed into DuckDuckGo's own search box. Strict Safe Search is forced on for every DuckDuckGo search.
