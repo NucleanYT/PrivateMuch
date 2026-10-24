@@ -17,6 +17,8 @@
 - I want a choice of search engine: DuckDuckGo or Brave.
 - Bookmarks are only shortcuts and must not save any data: just each site's address is kept (no titles, page data, cookies or history), only inside the app, never backed up or sent anywhere, removable one by one or all at once. Search results can't be bookmarked, because their address holds what I searched for.
 - When I send a screenshot with something circled, look closely at exactly that spot.
+- Talk to me in English. (I once asked for a reply in Greek, then said "back to English".)
+- Programming language: I said Claude could switch languages if every function and look stayed the same. Claude recommended staying with Java (I wouldn't see any difference, and it can't test the app on a phone), so the app stays in Java unless I ask again. The page has to stay HTML and JavaScript anyway.
 
 ### My likes
 - The final version overall ("Good job! I like this!"). This was the old version from the lost incognito chat.
@@ -42,6 +44,7 @@
 13. Typing a web address (like "nucleusbot.netlify.app") searched DuckDuckGo for it instead of opening the site. Fixed: addresses now open directly, like a browser's address bar, also when typed into DuckDuckGo's own box in the app. It only counts real endings (.com, .app, the real country endings and so on), so "node.js" is still a search. Adult sites typed as addresses are blocked too.
 14. The files first only went to a side branch, so the repo's front page (the main branch) showed just the license and readme. Fixed by merging into main; every change now gets merged into main.
 15. In Settings, the teal outline of the selected search engine card was cut off on the right. Likely causes: the outline got thicker when picked, which can spill past the card's edge, and the card's press bounce briefly made it bigger than its space. Fixed both: outlines keep the same thickness and only change color (the address bar too), big cards squish much less, and cards are never clipped while bouncing.
+16. The first bookmarks also kept each page's title, but I wanted bookmarks to save no data and just be shortcuts. Fixed: only the address is kept (old titles were removed automatically), and search results can't be bookmarked.
 
 ### The current app and page, in case they ever need rebuilding
 - Dark gray and teal, a moving grid floor, system fonts only (nothing loaded from other sites).
