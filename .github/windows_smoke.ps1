@@ -57,12 +57,27 @@ function Test-Window([string]$Exe, [string]$Name) {
 $unpacked = Test-Window (Resolve-Path "$Dist/win-unpacked/PrivateMuch.exe") 'unpacked'
 Write-Host "Unpacked app window opened: $unpacked"
 
-Write-Host '==== Installing'
-$since = Get-Date
-$setup = Start-Process -FilePath "$Dist/PrivateMuch-Setup.exe" -ArgumentList '/S' -Wait -PassThru
-Write-Host "Installer exit code: $($setup.ExitCode)"
-Show-Crashes $since
+# A first install takes a different path from an update, and the installer used to crash there at random,
+# so install fresh several times, uninstalling in between.
 $dir = Join-Path $env:LOCALAPPDATA 'Programs\privatemuch'
+$crashes = 0
+for ($i = 1; $i -le 8; $i++) {
+  $since = Get-Date
+  $setup = Start-Process -FilePath "$Dist/PrivateMuch-Setup.exe" -ArgumentList '/S' -Wait -PassThru
+  $ok = $setup.ExitCode -eq 0 -and (Test-Path (Join-Path $dir 'PrivateMuch.exe'))
+  Write-Host "Fresh install $i exit code: $($setup.ExitCode) installed: $ok"
+  if (-not $ok) { $crashes++; Show-Crashes $since }
+  if ($i -lt 8 -and (Test-Path "$dir\Uninstall PrivateMuch.exe")) {
+    $u = Start-Process "$dir\Uninstall PrivateMuch.exe" -ArgumentList '/S' -Wait -PassThru
+    # the uninstaller hands over to a copy of itself, so wait until the files are really gone
+    for ($w = 0; $w -lt 30 -and (Test-Path $dir); $w++) { Start-Sleep -Seconds 1 }
+    Start-Sleep -Seconds 2
+    Write-Host "  uninstall exit code: $($u.ExitCode) app left: $(Test-Path (Join-Path $dir 'PrivateMuch.exe'))"
+  }
+  Get-ChildItem 'HKCU:\Software' -ErrorAction SilentlyContinue | Where-Object { (Get-ItemProperty $_.PSPath -ErrorAction SilentlyContinue).InstallLocation -like '*privatemuch*' } |
+    ForEach-Object { if ($i -lt 8) { Remove-Item $_.PSPath -Recurse -Force } }
+}
+Write-Host "Installer crashes: $crashes of 8"
 if (Test-Path $dir) { Get-ChildItem $dir | ForEach-Object { Write-Host "  $($_.Name) $($_.Length)" } } else { Write-Host "No install folder at $dir" }
 
 $installed = $false
@@ -70,5 +85,6 @@ $exe = Join-Path $dir 'PrivateMuch.exe'
 if (Test-Path $exe) { $installed = Test-Window $exe 'installed' }
 Write-Host "Installed app window opened: $installed"
 
+if ($crashes -gt 0) { Write-Host 'FAILED: the installer crashed'; exit 1 }
 if (-not ($unpacked -and $installed)) { Write-Host 'FAILED: the PrivateMuch window did not open'; exit 1 }
 Write-Host 'The PrivateMuch window opened'
