@@ -10,8 +10,6 @@ const filter = require('./lib/filter.js');
 const { Store } = require('./lib/store.js');
 
 const INK = '#0B1012';
-const SCREEN_TOP = '#11201F'; // top of the tab overview, bookmarks and settings screens (chrome.css)
-const ICON = '#E2EBE9';       // the top bar's icons
 const TOOLBAR = 52;   // height of the top bar (it doubles as the window's title bar)
 const MAX_TABS = 12;  // same limit as the Android app
 const HOME_FILE = path.join(__dirname, 'web', 'index.html');
@@ -107,8 +105,7 @@ app.whenReady().then(() => {
     title: 'PrivateMuch',
     backgroundColor: INK,
     icon: path.join(__dirname, 'web', 'icons', 'icon-512.png'),
-    titleBarStyle: 'hidden',
-    titleBarOverlay: { color: INK, symbolColor: ICON, height: TOOLBAR },
+    titleBarStyle: 'hidden', // the top bar draws its own minimize / maximize / close buttons
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -122,6 +119,8 @@ app.whenReady().then(() => {
   // leave PrivateMuch running with nothing on screen.
   setTimeout(() => { if (!win.isDestroyed() && !win.isVisible()) win.show(); }, 3000);
   win.on('resize', layout);
+  win.on('maximize', sendState);
+  win.on('unmaximize', sendState);
   win.webContents.on('before-input-event', (event, input) => {
     if (shortcut(input, null)) event.preventDefault();
   });
@@ -332,6 +331,7 @@ function sendState() {
       engine: store.engine,
       engines: Object.values(filter.ENGINES).map(({ id, title, description }) => ({ id, title, description })),
       version: app.getVersion(),
+      maximized: win.isMaximized(),
     });
   });
 }
@@ -374,10 +374,12 @@ ipcMain.on('switch-tab', (event, id) => { const tab = tabs.find((t) => t.id === 
 ipcMain.on('close-tab', (event, id) => { const tab = tabs.find((t) => t.id === id); if (tab) closeTab(tab); });
 ipcMain.on('close-all-tabs', () => closeAllTabs());
 
-// Windows' own minimize / maximize / close buttons sit on whatever is showing: the top bar or a screen.
-function controlsColor(color) {
-  try { win.setTitleBarOverlay({ color, symbolColor: ICON, height: TOOLBAR }); } catch (err) { /* not on this system */ }
-}
+// The top bar's own minimize / maximize / close buttons.
+ipcMain.on('window', (event, action) => {
+  if (action === 'minimize') win.minimize();
+  else if (action === 'maximize') win.isMaximized() ? win.unmaximize() : win.maximize();
+  else if (action === 'close') win.close();
+});
 
 // The tab overview, Bookmarks and Settings cover the page, so the page steps aside while one is open.
 ipcMain.handle('overlay', async (event, open) => {
@@ -385,12 +387,10 @@ ipcMain.handle('overlay', async (event, open) => {
     await capturePreview(current);
     overlayOpen = true;
     win.contentView.removeChildView(current.view);
-    controlsColor(SCREEN_TOP);
   } else if (!open && overlayOpen) {
     overlayOpen = false;
     win.contentView.addChildView(current.view);
     layout();
-    controlsColor(INK);
   }
   sendState();
 });

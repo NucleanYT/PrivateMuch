@@ -26,4 +26,5 @@ contextBridge.exposeInMainWorld('pm', {
   clearBookmarks: () => ipcRenderer.send('clear-bookmarks'),
   setEngine: (id) => ipcRenderer.send('set-engine', String(id)),
   checkUpdate: () => ipcRenderer.send('check-update'),
+  windowControl: (action) => ipcRenderer.send('window', String(action)),
 });

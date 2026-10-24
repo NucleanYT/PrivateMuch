@@ -31,6 +31,13 @@
     <div class="progress" id="progress"><i></i></div>
   </header>
 
+  <!-- The window's minimize / maximize / close buttons, above the screens too. -->
+  <div class="window" id="window">
+    <button class="win" id="minimize" title="Minimize" aria-label="Minimize"><svg viewBox="0 0 24 24"><path d="M6.5 12h11"/></svg></button>
+    <button class="win" id="maximize" title="Maximize" aria-label="Maximize"><svg viewBox="0 0 24 24"><path class="behind" d="M9.5 5.5h7a2 2 0 0 1 2 2v7"/><rect class="front" x="6" y="6" width="12" height="12" rx="3"/></svg></button>
+    <button class="win close" id="close-window" title="Close" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M7.5 7.5l9 9M16.5 7.5l-9 9"/></svg></button>
+  </div>
+
   <section class="overlay" id="overlay" hidden></section>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
