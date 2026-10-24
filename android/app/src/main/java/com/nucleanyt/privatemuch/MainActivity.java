@@ -65,12 +65,15 @@ public class MainActivity extends Activity {
     private Updater updater;
     private TabsView tabsView;     // the tab overview while it's open
     private SettingsView settingsView; // settings while they're open
+    private BookmarksView bookmarksView; // bookmarks while they're open
+    private Bookmarks bookmarks;
     private Engine engine;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         engine = Engine.load(this);
+        bookmarks = new Bookmarks(this);
         Tab first = new Tab(createWebView());
         tabs.add(first);
         wipe(first.web); // start clean, even if the app was killed last time before it could clean up
@@ -198,7 +201,10 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams tabsParams = new LinearLayout.LayoutParams(dp(34), dp(34));
         tabsParams.setMarginEnd(dp(8));
         homeLeft.addView(homeTabsButton, tabsParams);
-        homeLeft.addView(buildSettingsButton(), new LinearLayout.LayoutParams(dp(34), dp(34)));
+        LinearLayout.LayoutParams bookmarksParams = new LinearLayout.LayoutParams(dp(34), dp(34));
+        bookmarksParams.setMarginEnd(dp(8));
+        homeLeft.addView(squareButton(R.drawable.ic_bookmark, "Bookmarks", v -> showBookmarks()), bookmarksParams);
+        homeLeft.addView(squareButton(R.drawable.ic_settings, "Settings", v -> showSettings()), new LinearLayout.LayoutParams(dp(34), dp(34)));
         FrameLayout.LayoutParams leftCorner = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.START);
         leftCorner.setMargins(dp(12), dp(10), 0, 0);
@@ -216,6 +222,7 @@ public class MainActivity extends Activity {
         bottomBar = new BottomBar(this, new BottomBar.Listener() {
             @Override public void onBack() { if (current.web.canGoBack()) current.web.goBack(); }
             @Override public void onForward() { if (current.web.canGoForward()) current.web.goForward(); }
+            @Override public void onBookmarks() { showBookmarks(); }
             @Override public void onTabs() { showTabs(); }
             @Override public void onNewTab() { newTab(); }
         });
@@ -251,19 +258,62 @@ public class MainActivity extends Activity {
         return b;
     }
 
-    /** A rounded square with the settings icon, matching the tabs button next to it. */
-    private View buildSettingsButton() {
+    /** A rounded square with an icon, matching the tabs button next to it. */
+    private View squareButton(int icon, String description, View.OnClickListener onClick) {
         ImageButton b = new ImageButton(this);
-        b.setImageResource(R.drawable.ic_settings);
-        b.setContentDescription("Settings");
+        b.setImageResource(icon);
+        b.setContentDescription(description);
         GradientDrawable square = new GradientDrawable();
         square.setCornerRadius(dp(9));
         square.setColor(Color.parseColor("#E6131B1E"));
         square.setStroke(dp(1), Color.parseColor("#24333A"));
         b.setBackground(new RippleDrawable(ColorStateList.valueOf(Color.parseColor("#4035D0BF")), square, null));
-        b.setOnClickListener(v -> showSettings());
+        b.setOnClickListener(onClick);
         AddressBar.addSpringPress(b);
         return b;
+    }
+
+    // ---------- Bookmarks ----------
+
+    private void showBookmarks() {
+        if (bookmarksView != null) return;
+        addressBar.stopEditing();
+        bookmarksView = new BookmarksView(this, new BookmarksView.Listener() {
+            @Override public void onToggleCurrent() { toggleBookmark(); refreshBookmarks(false); }
+            @Override public void onOpen(Bookmarks.Bookmark bookmark) { hideBookmarks(); current.web.loadUrl(bookmark.url); }
+            @Override public void onRemove(Bookmarks.Bookmark bookmark) { bookmarks.remove(bookmark.url); refreshBookmarks(false); }
+            @Override public void onDeleteAll() { bookmarks.clear(); refreshBookmarks(false); }
+            @Override public void onDismiss() { hideBookmarks(); }
+        });
+        refreshBookmarks(true);
+        screen.addView(bookmarksView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+    }
+
+    private void refreshBookmarks(boolean animate) {
+        String url = current.url();
+        boolean onSite = !current.onHome();
+        bookmarksView.show(bookmarks.all(), onSite ? current.label() : null, onSite && bookmarks.contains(url), animate);
+        bottomBar.setBookmarked(onSite && bookmarks.contains(url));
+    }
+
+    /** Saves the open page, or removes it if it's already saved. Blocked sites can't be saved. */
+    private void toggleBookmark() {
+        String url = current.url();
+        if (current.onHome()) return;
+        if (bookmarks.contains(url)) {
+            bookmarks.remove(url);
+        } else if (ContentFilter.isBlockedUrl(url)) {
+            Toast.makeText(this, "Adult sites can't be bookmarked.", Toast.LENGTH_SHORT).show();
+        } else if (!bookmarks.add(current.label(), url)) {
+            Toast.makeText(this, "You can save up to " + Bookmarks.MAX + " bookmarks. Delete some first.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void hideBookmarks() {
+        if (bookmarksView == null) return;
+        BookmarksView closing = bookmarksView;
+        bookmarksView = null;
+        closing.dismiss(() -> screen.removeView(closing));
     }
 
     // ---------- Settings ----------
@@ -402,6 +452,7 @@ public class MainActivity extends Activity {
             homeRight.setVisibility(onHome ? View.VISIBLE : View.GONE);
         }
         if (!onHome) addressBar.setUrl(url);
+        bottomBar.setBookmarked(!onHome && bookmarks.contains(url));
         bottomBar.setNavigation(current != null && current.web.canGoBack(), current != null && current.web.canGoForward());
     }
 
@@ -436,7 +487,9 @@ public class MainActivity extends Activity {
     @Override
     @SuppressWarnings("deprecation")
     public void onBackPressed() {
-        if (settingsView != null) {
+        if (bookmarksView != null) {
+            hideBookmarks();
+        } else if (settingsView != null) {
             hideSettings();
         } else if (tabsView != null) {
             hideTabs();
