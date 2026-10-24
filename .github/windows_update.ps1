@@ -1,5 +1,5 @@
-# Does what Settings → Check for updates does (start the installer, close the app 0.6 s later) and checks the
-# installer really replaced the app's files and opened it again.
+# Does what Settings → Check for updates does (start the installer in its update mode, close the app 0.6 s later)
+# and checks the installer really replaced the app's files and opened it again, without stopping to ask anything.
 param([string]$Dist = 'desktop/dist')
 $ErrorActionPreference = 'Continue'
 
@@ -21,7 +21,6 @@ $exe = Join-Path $dir 'PrivateMuch.exe'
 $marker = Join-Path $dir 'LICENSE.electron.txt'
 $original = Get-Content $marker -Raw
 $setup = Join-Path $env:TEMP 'PrivateMuch-Setup-test.exe'
-Copy-Item "$Dist/PrivateMuch-Setup.exe" $setup -Force
 
 function Windows-Of([string[]]$Names) {
   $ids = @(Get-Process -Name $Names -ErrorAction SilentlyContinue | ForEach-Object { [uint32]$_.Id })
@@ -41,13 +40,15 @@ function Windows-Of([string[]]$Names) {
 }
 
 $failed = 0
-foreach ($variant in @('')) {
-  for ($i = 1; $i -le 2; $i++) {
+foreach ($variant in @('--updated')) {
+  for ($i = 1; $i -le 4; $i++) {
     Get-Process -Name PrivateMuch, PrivateMuch-Setup-test -ErrorAction SilentlyContinue | Stop-Process -Force
     Start-Sleep -Seconds 2
     Set-Content $marker 'old version' -NoNewline
     Start-Process $exe
     Start-Sleep -Seconds 12
+    # Like Check for updates: the installer is downloaded while the app is open (it deletes old ones when it starts).
+    Copy-Item "$Dist/PrivateMuch-Setup.exe" $setup -Force
     $p = if ($variant) { Start-Process $setup -ArgumentList $variant -PassThru } else { Start-Process $setup -PassThru }
     Start-Sleep -Milliseconds 600
     Get-Process -Name PrivateMuch -ErrorAction SilentlyContinue | ForEach-Object { [void]$_.CloseMainWindow() }
@@ -62,5 +63,5 @@ foreach ($variant in @('')) {
   }
 }
 Get-Process -Name PrivateMuch, PrivateMuch-Setup-test -ErrorAction SilentlyContinue | Stop-Process -Force
-if ($failed) { Write-Host "FAILED: $failed of 2 updates"; exit 1 }
+if ($failed) { Write-Host "FAILED: $failed of 4 updates"; exit 1 }
 Write-Host 'Updating over the running app works'

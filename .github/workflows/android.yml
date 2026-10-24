@@ -97,8 +97,7 @@ jobs:
 
   release:
     needs: [android, windows]
-    # Android updates still go out if only the Windows build fails.
-    if: ${{ !cancelled() && needs.android.result == 'success' }}
+    # Both apps or neither: a release without one of them would break its download link and Update button.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -106,7 +105,6 @@ jobs:
           name: android
 
       - uses: actions/download-artifact@v4
-        if: ${{ needs.windows.result == 'success' }}
         with:
           name: windows
 
@@ -115,10 +113,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          files="PrivateMuch.apk"
-          [ -f PrivateMuch-Setup.exe ] && files="$files PrivateMuch-Setup.exe"
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest $files \
+          gh release create latest PrivateMuch.apk PrivateMuch-Setup.exe \
             --target "$GITHUB_SHA" \
             --title "PrivateMuch build ${GITHUB_RUN_NUMBER}" \
             --notes "Android: download PrivateMuch.apk and open it on your phone. Windows: download PrivateMuch-Setup.exe and run it. Built from ${GITHUB_SHA::7}."
