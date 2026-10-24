@@ -22,15 +22,35 @@ final class ContentFilter {
         "blowjob", "handjob", "cumshot", "deepthroat", "gangbang", "threesome", "dick pic", "strip club",
         "camgirl", "cam girl", "onlyfans", "fansly", "pornhub", "xvideos", "xnxx", "xhamster", "redtube",
         "youporn", "brazzers", "chaturbate", "spankbang", "playboy",
+        "sexcam", "sexchat", "sexvideo", "sextape", "sex toy", "anal sex", "oral sex", "jerk off", "jerking off",
+        "wank", "wanking", "fap", "fapping", "smut", "upskirt", "voyeur", "camwhore", "whore", "slut",
+        "creampie", "bukkake", "dildo", "butt plug", "fleshlight", "strapon", "nip slip", "nipple slip",
+        "incest", "stepsis", "futanari", "ahegao", "lolicon", "shotacon", "seggs", "naked pics", "naked girls",
+        "naked women", "naked selfie", "topless", "escort service", "jizz", "youjizz", "literotica",
+        "nutaku", "hanime", "fakku", "manyvids", "erome", "fapello", "thothub", "imagefap", "xxxvideos",
+        "porntube", "dilf", "pawg", "stripchat", "livejasmin",
     };
     // BLOCKLIST-END
 
-    /** Any site whose address contains one of these is blocked in the app. */
+    /** Any site whose address contains one of these is blocked. */
+    // HOSTLIST-START (keep identical to BLOCKED_HOST_PARTS in index.html)
     private static final String[] BLOCKED_HOST_PARTS = {
         "porn", "xxx", "hentai", "xvideos", "xnxx", "xhamster", "onlyfans", "fansly", "chaturbate",
         "brazzers", "redtube", "spankbang", "rule34", "nsfw", "livejasmin", "stripchat", "bongacams",
-        "camsoda", "motherless", "eporner", "tnaflix",
+        "camsoda", "motherless", "eporner", "tnaflix", "jizz", "sxyprn", "porntrex",
     };
+    // HOSTLIST-END
+
+    /** Exact sites (and their subdomains), for names too short or common to match as part of an address. */
+    // SITELIST-START (keep identical to BLOCKED_SITES in index.html)
+    private static final String[] BLOCKED_SITES = {
+    "erome.com", "beeg.com", "tube8.com", "hclips.com", "efukt.com", "fapello.com", "thothub.to",
+        "coomer.su", "coomer.party", "manyvids.com", "clips4sale.com", "hanime.tv", "fakku.net", "4tube.com",
+        "noodlemagazine.com", "fuq.com", "drtuber.com", "imagefap.com", "literotica.com", "f95zone.to",
+        "nutaku.net", "kink.com", "playboy.com", "cam4.com", "myfreecams.com", "flirt4free.com",
+        "jerkmate.com", "erome.io", "nudogram.com", "sexstories.com",
+    };
+    // SITELIST-END
 
     /** Query parameters that carry what someone searched for, on DuckDuckGo and other search sites. */
     private static final String[] SEARCH_PARAMS = {"q", "query", "search_query", "p"};
@@ -53,6 +73,9 @@ final class ContentFilter {
         if (host != null) {
             for (String part : BLOCKED_HOST_PARTS) {
                 if (host.contains(part)) return true;
+            }
+            for (String site : BLOCKED_SITES) {
+                if (host.equals(site) || host.endsWith("." + site)) return true;
             }
         }
         String query = rawQuery(url);

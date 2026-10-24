@@ -96,6 +96,11 @@ public class MainActivity extends Activity {
                 // Stay inside the app for web pages; ignore app links (intent:, market:, tel: ...).
                 if (!("https".equals(scheme) || "http".equals(scheme))) return true;
                 if (request.isForMainFrame()) {
+                    String typedAddress = UrlInput.fromDuckDuckGoSearch(request.getUrl().toString());
+                    if (typedAddress != null) { // a web address typed into DuckDuckGo's box opens the site
+                        view.loadUrl(typedAddress);
+                        return true;
+                    }
                     String safe = ContentFilter.withSafeSearch(request.getUrl().toString());
                     if (safe != null) { // every DuckDuckGo search gets strict Safe Search
                         view.loadUrl(safe);

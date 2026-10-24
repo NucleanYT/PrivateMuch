@@ -338,7 +338,7 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
     </form>
   </div>
 
-  <p class="fine rise" id="fine" style="--d:.34s">Searches open on DuckDuckGo. Nothing is stored here.</p>
+  <p class="fine rise" id="fine" style="--d:.34s">Search DuckDuckGo or type a web address. Nothing is stored here.</p>
 
   <section class="card-wrap rise" style="--d:.42s" aria-labelledby="how">
     <article class="card" id="card">
@@ -694,6 +694,13 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
     'blowjob', 'handjob', 'cumshot', 'deepthroat', 'gangbang', 'threesome', 'dick pic', 'strip club',
     'camgirl', 'cam girl', 'onlyfans', 'fansly', 'pornhub', 'xvideos', 'xnxx', 'xhamster', 'redtube',
     'youporn', 'brazzers', 'chaturbate', 'spankbang', 'playboy',
+    'sexcam', 'sexchat', 'sexvideo', 'sextape', 'sex toy', 'anal sex', 'oral sex', 'jerk off', 'jerking off',
+    'wank', 'wanking', 'fap', 'fapping', 'smut', 'upskirt', 'voyeur', 'camwhore', 'whore', 'slut',
+    'creampie', 'bukkake', 'dildo', 'butt plug', 'fleshlight', 'strapon', 'nip slip', 'nipple slip',
+    'incest', 'stepsis', 'futanari', 'ahegao', 'lolicon', 'shotacon', 'seggs', 'naked pics', 'naked girls',
+    'naked women', 'naked selfie', 'topless', 'escort service', 'jizz', 'youjizz', 'literotica',
+    'nutaku', 'hanime', 'fakku', 'manyvids', 'erome', 'fapello', 'thothub', 'imagefap', 'xxxvideos',
+    'porntube', 'dilf', 'pawg', 'stripchat', 'livejasmin',
   ];
   // BLOCKLIST-END
 
@@ -709,6 +716,72 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
   const BLOCKED = new RegExp('(?:^| )(?:' + BLOCKED_WORDS.map(normalize).join('|') + ')(?:e?s)?(?= |$)');
   const isBlocked = (text) => BLOCKED.test(normalize(text));
 
+  // HOSTLIST-START (keep identical to BLOCKED_HOST_PARTS in android/.../ContentFilter.java)
+  const BLOCKED_HOST_PARTS = [
+    'porn', 'xxx', 'hentai', 'xvideos', 'xnxx', 'xhamster', 'onlyfans', 'fansly', 'chaturbate',
+    'brazzers', 'redtube', 'spankbang', 'rule34', 'nsfw', 'livejasmin', 'stripchat', 'bongacams',
+    'camsoda', 'motherless', 'eporner', 'tnaflix', 'jizz', 'sxyprn', 'porntrex',
+  ];
+  // HOSTLIST-END
+  // Exact sites (and their subdomains), for names too short or common to match as part of an address.
+  // SITELIST-START (keep identical to BLOCKED_SITES in android/.../ContentFilter.java)
+  const BLOCKED_SITES = [
+    'erome.com', 'beeg.com', 'tube8.com', 'hclips.com', 'efukt.com', 'fapello.com', 'thothub.to',
+    'coomer.su', 'coomer.party', 'manyvids.com', 'clips4sale.com', 'hanime.tv', 'fakku.net', '4tube.com',
+    'noodlemagazine.com', 'fuq.com', 'drtuber.com', 'imagefap.com', 'literotica.com', 'f95zone.to',
+    'nutaku.net', 'kink.com', 'playboy.com', 'cam4.com', 'myfreecams.com', 'flirt4free.com',
+    'jerkmate.com', 'erome.io', 'nudogram.com', 'sexstories.com',
+  ];
+  // SITELIST-END
+  function isBlockedSite(url) {
+    const host = url.replace(/^https?:\/\//i, '').split(/[/?#]/, 1)[0].split('@').pop().split(':')[0].toLowerCase();
+    return BLOCKED_HOST_PARTS.some((part) => host.includes(part))
+      || BLOCKED_SITES.some((site) => host === site || host.endsWith('.' + site));
+  }
+
+  /* ================= Web addresses typed into the box ================= */
+  // Only these endings and real country endings count, so "node.js" is still a search.
+  // TLDLIST-START (keep identical to WEB_TLDS in android/.../UrlInput.java)
+  const WEB_TLDS = [
+    'com', 'net', 'org', 'edu', 'gov', 'mil', 'int', 'info', 'biz', 'app', 'dev', 'xyz', 'site', 'online',
+    'store', 'shop', 'tech', 'blog', 'cloud', 'page', 'link', 'live', 'art', 'news', 'top', 'club', 'wiki',
+    'pro', 'mobi', 'name', 'design', 'space', 'website', 'fun', 'games', 'world', 'email', 'digital',
+    'media', 'studio', 'tools', 'social', 'chat', 'bot', 'zone', 'one', 'today', 'life', 'work', 'network',
+    'systems', 'software', 'agency', 'company', 'global', 'school', 'academy',
+  ];
+  // TLDLIST-END
+  // COUNTRYLIST-START (keep identical to COUNTRY_TLDS in android/.../UrlInput.java)
+  const COUNTRY_CODES =
+    'ac ad ae af ag ai al am ao aq ar as at au aw ax az ba bb bd be bf bg bh bi bj bl bm bn bo bq br ' +
+    'bs bt bv bw by bz ca cc cd cf cg ch ci ck cl cm cn co cr cu cv cw cx cy cz de dj dk dm do dz ec ' +
+    'ee eg eh er es et eu fi fj fk fm fo fr ga gb gd ge gf gg gh gi gl gm gn gp gq gr gs gt gu gw gy ' +
+    'hk hm hn hr ht hu id ie il im in io iq ir is it je jm jo jp ke kg kh ki km kn kp kr kw ky kz la ' +
+    'lb lc li lk lr ls lt lu lv ly ma mc md me mf mg mh mk ml mm mn mo mp mq mr ms mt mu mv mw mx my ' +
+    'mz na nc ne nf ng ni nl no np nr nu nz om pa pe pf pg ph pk pl pm pn pr ps pt pw py qa re ro rs ' +
+    'ru rw sa sb sc sd se sg sh si sj sk sl sm sn so sr ss st sv sx sy sz tc td tf tg th tj tk tl tm ' +
+    'tn to tr tt tv tw tz ua ug uk um us uy uz va vc ve vg vi vn vu wf ws ye yt za zm zw';
+  // COUNTRYLIST-END
+  const COUNTRY_TLDS = new Set(COUNTRY_CODES.split(' '));
+  const LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+  function isWebHost(hostAndPort) {
+    const m = /^([^:]+)(?::\d{1,5})?$/.exec(hostAndPort.toLowerCase());
+    if (!m) return false;
+    const parts = m[1].split('.');
+    if (parts.length === 4 && parts.every((p) => /^\d{1,3}$/.test(p) && Number(p) <= 255)) return true; // IP address
+    if (parts.length < 2 || !parts.every((p) => LABEL.test(p))) return false;
+    const tld = parts[parts.length - 1];
+    return COUNTRY_TLDS.has(tld) || WEB_TLDS.includes(tld);
+  }
+  // The address to open when the text is a web address ("example.com", "https://..."), otherwise null.
+  function toUrl(text) {
+    const s = text.trim();
+    if (!s || /\s/.test(s)) return null;
+    const scheme = /^https?:\/\//i.exec(s);
+    const rest = scheme ? s.slice(scheme[0].length) : s;
+    if (!isWebHost(rest.split(/[/?#]/, 1)[0])) return null;
+    return scheme ? s : 'https://' + s;
+  }
+
   /* ================= Search (nothing kept) ================= */
   const form = $('#search');
   const q = $('#q');
@@ -716,7 +789,7 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
 
   function wipe() { q.value = ''; form.classList.remove('has-text', 'sent', 'nudge', 'tick'); }
   function restart(cls) { form.classList.remove(cls); void form.offsetWidth; form.classList.add(cls); }
-  function openSearch(url) {
+  function openUrl(url) {
     const a = document.createElement('a');
     a.href = url;
     a.rel = 'noreferrer noopener';
@@ -729,7 +802,7 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
   const modeEl = $('#mode');
   const fine = $('#fine');
   const COPY = {
-    search: { placeholder: 'Search', label: 'Search privately with DuckDuckGo', fine: 'Searches open on DuckDuckGo. Nothing is stored here.' },
+    search: { placeholder: 'Search', label: 'Search privately with DuckDuckGo', fine: 'Search DuckDuckGo or type a web address. Nothing is stored here.' },
     chat: { placeholder: 'Ask Duck.ai', label: 'Ask Duck.ai privately', fine: 'Chats open on Duck.ai. Nothing is stored here.' },
   };
   let mode = 'search'; // never remembered between visits
@@ -770,22 +843,24 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
     e.preventDefault();
     const term = q.value.trim();
     if (!term) {
-      if (mode === 'chat') { openSearch('https://duck.ai/'); return; } // empty chat: just open Duck.ai
+      if (mode === 'chat') { openUrl('https://duck.ai/'); return; } // empty chat: just open Duck.ai
       restart('nudge'); q.focus(); return;
     }
-    if (isBlocked(term)) {
-      wipe();
-      fine.textContent = 'Adult searches are blocked.';
-      fine.classList.remove('warn'); void fine.offsetWidth; fine.classList.add('warn');
-      clearTimeout(warnTimer);
-      warnTimer = setTimeout(() => { fine.classList.remove('warn'); fine.textContent = COPY[mode].fine; }, 3500);
-      return;
-    }
+    if (isBlocked(term)) { warn('Adult searches are blocked.'); return; }
+    const site = mode === 'search' ? toUrl(term) : null; // a web address opens the site itself
+    if (site && isBlockedSite(site)) { warn('Adult sites are blocked.'); return; }
     restart('sent');
     // "!ai" is DuckDuckGo's shortcut that hands the text to Duck.ai; kp=1 is strict Safe Search.
-    openSearch('https://duckduckgo.com/?q=' + encodeURIComponent(mode === 'chat' ? '!ai ' + term : term) + '&kp=1');
+    openUrl(site || 'https://duckduckgo.com/?q=' + encodeURIComponent(mode === 'chat' ? '!ai ' + term : term) + '&kp=1');
     setTimeout(() => { wipe(); q.blur(); form.classList.remove('sent'); }, 350);
   });
+  function warn(message) {
+    wipe();
+    fine.textContent = message;
+    fine.classList.remove('warn'); void fine.offsetWidth; fine.classList.add('warn');
+    clearTimeout(warnTimer);
+    warnTimer = setTimeout(() => { fine.classList.remove('warn'); fine.textContent = COPY[mode].fine; }, 3500);
+  }
   // Never keep the typed text, even when the browser restores the page from its back/forward cache.
   window.addEventListener('pagehide', wipe);
   window.addEventListener('pageshow', wipe);
