@@ -21,17 +21,9 @@ function Show-Crashes([datetime]$Since) {
     ForEach-Object { Write-Host "[$($_.ProviderName) $($_.Id)] $($_.Message -replace '\s+', ' ')" }
 }
 
-# Starts the app, waits, and returns $true if a visible "PrivateMuch" window appeared.
-function Test-Window([string]$Exe, [string]$Name) {
-  Write-Host "==== Starting $Name ($Exe)"
-  $log = Join-Path $env:RUNNER_TEMP "$Name-log.txt"
-  $since = Get-Date
-  $app = Start-Process -FilePath $Exe -ArgumentList '--enable-logging=stderr' -RedirectStandardError $log -PassThru
-  Start-Sleep -Seconds 20
-  $procs = @(Get-Process -Name PrivateMuch -ErrorAction SilentlyContinue)
-  Write-Host "Main process exited: $($app.HasExited) $(if ($app.HasExited) { "(exit code $($app.ExitCode))" })"
-  Write-Host "PrivateMuch processes running: $($procs.Count)"
-  $ids = $procs | ForEach-Object { [uint32]$_.Id }
+# Lists PrivateMuch's windows and returns how many visible "PrivateMuch" windows there are.
+function Count-Windows {
+  $ids = @(Get-Process -Name PrivateMuch -ErrorAction SilentlyContinue | ForEach-Object { [uint32]$_.Id })
   $script:shown = 0
   [Win]::EnumWindows({
     param($h, $p)
@@ -41,17 +33,30 @@ function Test-Window([string]$Exe, [string]$Name) {
       $title = New-Object System.Text.StringBuilder 256
       [void][Win]::GetWindowText($h, $title, 256)
       $visible = [Win]::IsWindowVisible($h)
-      if ($title.Length -gt 0 -or $visible) { Write-Host "window pid=$wpid visible=$visible title='$title'" }
+      if ($visible) { Write-Host "window pid=$wpid title='$title'" }
       if ($visible -and $title.ToString() -eq 'PrivateMuch') { $script:shown++ }
     }
     return $true
   }, [IntPtr]::Zero) | Out-Null
+  return $script:shown
+}
+
+# Starts the app, waits, and returns $true if a visible "PrivateMuch" window appeared.
+function Test-Window([string]$Exe, [string]$Name) {
+  Write-Host "==== Starting $Name ($Exe)"
+  $log = Join-Path $env:RUNNER_TEMP "$Name-log.txt"
+  $since = Get-Date
+  $app = Start-Process -FilePath $Exe -ArgumentList '--enable-logging=stderr' -RedirectStandardError $log -PassThru
+  Start-Sleep -Seconds 20
+  Write-Host "Main process exited: $($app.HasExited) $(if ($app.HasExited) { "(exit code $($app.ExitCode))" })"
+  Write-Host "PrivateMuch processes running: $(@(Get-Process -Name PrivateMuch -ErrorAction SilentlyContinue).Count)"
+  $shown = Count-Windows
   Write-Host "---- $Name log ----"
   if (Test-Path $log) { Get-Content $log -Tail 60 | Out-Host }
   Show-Crashes $since
-  $procs | Stop-Process -Force -ErrorAction SilentlyContinue
+  Get-Process -Name PrivateMuch -ErrorAction SilentlyContinue | Stop-Process -Force
   Start-Sleep -Seconds 3
-  return ($script:shown -gt 0)
+  return ($shown -gt 0)
 }
 
 $unpacked = Test-Window (Resolve-Path "$Dist/win-unpacked/PrivateMuch.exe") 'unpacked'
@@ -85,6 +90,21 @@ $exe = Join-Path $dir 'PrivateMuch.exe'
 if (Test-Path $exe) { $installed = Test-Window $exe 'installed' }
 Write-Host "Installed app window opened: $installed"
 
+# Opening it again while it's open brings the same window to the front instead of starting a second copy.
+$single = $false
+if ($installed) {
+  Write-Host '==== Opening it twice'
+  Start-Process $exe
+  Start-Sleep -Seconds 15
+  Start-Process $exe
+  Start-Sleep -Seconds 10
+  $n = Count-Windows
+  Write-Host "Visible PrivateMuch windows after opening it twice: $n"
+  $single = $n -eq 1
+  Get-Process -Name PrivateMuch -ErrorAction SilentlyContinue | Stop-Process -Force
+}
+
 if ($crashes -gt 0) { Write-Host 'FAILED: the installer crashed'; exit 1 }
 if (-not ($unpacked -and $installed)) { Write-Host 'FAILED: the PrivateMuch window did not open'; exit 1 }
+if (-not $single) { Write-Host 'FAILED: opening it twice did not leave exactly one window'; exit 1 }
 Write-Host 'The PrivateMuch window opened'

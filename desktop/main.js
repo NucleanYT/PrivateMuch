@@ -16,6 +16,20 @@ const HOME_FILE = path.join(__dirname, 'web', 'index.html');
 const BLOCKED_FILE = path.join(__dirname, 'chrome', 'blocked.html');
 const RELEASE_API = 'https://api.github.com/repos/NucleanYT/PrivateMuch/releases/tags/latest';
 
+// ---------- One window at a time ----------
+// Opening PrivateMuch again brings the open window to the front. A second copy would also delete the first
+// one's temporary folder (below) while it's still in use. main.js is a CommonJS module, so `return` stops it here.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+  return;
+}
+app.on('second-instance', () => {
+  if (!win) return;
+  if (win.isMinimized()) win.restore();
+  win.show();
+  win.focus();
+});
+
 // ---------- Nothing left behind ----------
 // Chromium's own files (GPU cache, crash reports, local state) go to a fresh temporary folder that's
 // deleted when the app closes. Leftovers from a run that crashed are deleted on the next start.

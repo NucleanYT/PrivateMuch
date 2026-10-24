@@ -48,6 +48,7 @@ The same page and the same private browser, built for a mouse and keyboard. One 
 - The same adult filter, strict Safe Search and web-address rules as the Android app, using the same lists.
 - Keyboard: Ctrl+T new tab, Ctrl+W close tab, Ctrl+Tab next tab, Ctrl+L address bar, Ctrl+D bookmark, Alt+Left / Alt+Right back and forward, F5 reload, Ctrl+plus / minus / 0 zoom, Esc closes a screen.
 - Settings → Check for updates downloads the newest build and installs it.
+- Opening PrivateMuch while it's already open brings that window to the front.
 
 ## Updating the app
 
@@ -61,7 +62,7 @@ Tap **Update** in the top-right corner of the app's home page. It checks GitHub 
 | `manifest.webmanifest`, `icons/` | App name and icons for adding the web version to a home screen |
 | `android/` | The Android app, which shows `index.html` in a private built-in browser |
 | `desktop/` | The Windows app (Electron): `main.js` runs tabs, privacy and the filter, `chrome/` is the top bar and screens, `lib/filter.js` holds the shared lists and rules |
-| `.github/workflows/android.yml` | On every push: checks the shared lists match in all three copies, tests the Windows app's filter, builds the Android APK and the Windows installer, and publishes both as the `latest` release |
+| `.github/workflows/android.yml` | On every push: checks the shared lists match in all three copies, tests the Windows app's filter, builds the Android APK and the Windows installer, installs the Windows app fresh 8 times on a real Windows machine and checks its window opens, and publishes both as the `latest` release |
 | `MEMORY_NOTES.md` | Notes on preferences and past fixes, so future changes keep what works |
 
 To build the app yourself, install JDK 17 and the Android SDK, then run `./gradlew assembleRelease` inside `android/`. The APK ends up in `android/app/build/outputs/apk/release/`.
