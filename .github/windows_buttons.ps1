@@ -90,6 +90,7 @@ foreach ($where in 'top bar', 'Private tabs screen') {
 Click $h $CLOSE
 Check 'close on the Private tabs screen' ($app.WaitForExit(15000))
 
+[void][Mouse]::SetCursorPos(5, 600) # move away, so no tooltip stays open
 Get-Process -Name PrivateMuch -ErrorAction SilentlyContinue | Stop-Process -Force
 if ($failed) { Write-Host "FAILED: $failed button checks"; exit 1 }
 Write-Host 'All window buttons work with the real mouse'

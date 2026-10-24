@@ -55,8 +55,9 @@ foreach ($variant in @('')) {
     $stuck = if ($finished) { '' } else { 'installer still open: ' + ((Windows-Of 'PrivateMuch-Setup-test') -join ', ') }
     Start-Sleep -Seconds 15
     $replaced = (Get-Content $marker -Raw -ErrorAction SilentlyContinue) -eq $original
-    $wins = Windows-Of 'PrivateMuch'
-    Write-Host ("Update {0}: installer exit={1} files replaced={2} app windows={3} {4}" -f $i, $(if ($finished) { $p.ExitCode } else { '-' }), $replaced, $wins.Count, $stuck)
+    $all = Windows-Of 'PrivateMuch'
+    $wins = @($all | Where-Object { $_ -like "*'PrivateMuch'" }) # not tooltips and the like
+    Write-Host ("Update {0}: installer exit={1} files replaced={2} app windows={3} (all visible: {4}) {5}" -f $i, $(if ($finished) { $p.ExitCode } else { '-' }), $replaced, $wins.Count, ($all -join ', '), $stuck)
     if (-not ($finished -and $replaced -and $wins.Count -eq 1)) { $failed++ }
   }
 }
