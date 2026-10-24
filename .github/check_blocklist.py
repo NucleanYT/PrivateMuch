@@ -6,6 +6,7 @@ APP = "android/app/src/main/java/com/nucleanyt/privatemuch/"
 SHARED_LISTS = [
     ("BLOCKLIST", "blocked words", APP + "ContentFilter.java"),
     ("HOSTLIST", "blocked site names", APP + "ContentFilter.java"),
+    ("SITELIST", "blocked sites", APP + "ContentFilter.java"),
     ("TLDLIST", "web address endings", APP + "UrlInput.java"),
     ("COUNTRYLIST", "country endings", APP + "UrlInput.java"),
 ]

@@ -694,6 +694,13 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
     'blowjob', 'handjob', 'cumshot', 'deepthroat', 'gangbang', 'threesome', 'dick pic', 'strip club',
     'camgirl', 'cam girl', 'onlyfans', 'fansly', 'pornhub', 'xvideos', 'xnxx', 'xhamster', 'redtube',
     'youporn', 'brazzers', 'chaturbate', 'spankbang', 'playboy',
+    'sexcam', 'sexchat', 'sexvideo', 'sextape', 'sex toy', 'anal sex', 'oral sex', 'jerk off', 'jerking off',
+    'wank', 'wanking', 'fap', 'fapping', 'smut', 'upskirt', 'voyeur', 'camwhore', 'whore', 'slut',
+    'creampie', 'bukkake', 'dildo', 'butt plug', 'fleshlight', 'strapon', 'nip slip', 'nipple slip',
+    'incest', 'stepsis', 'futanari', 'ahegao', 'lolicon', 'shotacon', 'seggs', 'naked pics', 'naked girls',
+    'naked women', 'naked selfie', 'topless', 'escort service', 'jizz', 'youjizz', 'literotica',
+    'nutaku', 'hanime', 'fakku', 'manyvids', 'erome', 'fapello', 'thothub', 'imagefap', 'xxxvideos',
+    'porntube', 'dilf', 'pawg', 'stripchat', 'livejasmin',
   ];
   // BLOCKLIST-END
 
@@ -713,12 +720,23 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
   const BLOCKED_HOST_PARTS = [
     'porn', 'xxx', 'hentai', 'xvideos', 'xnxx', 'xhamster', 'onlyfans', 'fansly', 'chaturbate',
     'brazzers', 'redtube', 'spankbang', 'rule34', 'nsfw', 'livejasmin', 'stripchat', 'bongacams',
-    'camsoda', 'motherless', 'eporner', 'tnaflix',
+    'camsoda', 'motherless', 'eporner', 'tnaflix', 'jizz', 'sxyprn', 'porntrex',
   ];
   // HOSTLIST-END
+  // Exact sites (and their subdomains), for names too short or common to match as part of an address.
+  // SITELIST-START (keep identical to BLOCKED_SITES in android/.../ContentFilter.java)
+  const BLOCKED_SITES = [
+    'erome.com', 'beeg.com', 'tube8.com', 'hclips.com', 'efukt.com', 'fapello.com', 'thothub.to',
+    'coomer.su', 'coomer.party', 'manyvids.com', 'clips4sale.com', 'hanime.tv', 'fakku.net', '4tube.com',
+    'noodlemagazine.com', 'fuq.com', 'drtuber.com', 'imagefap.com', 'literotica.com', 'f95zone.to',
+    'nutaku.net', 'kink.com', 'playboy.com', 'cam4.com', 'myfreecams.com', 'flirt4free.com',
+    'jerkmate.com', 'erome.io', 'nudogram.com', 'sexstories.com',
+  ];
+  // SITELIST-END
   function isBlockedSite(url) {
     const host = url.replace(/^https?:\/\//i, '').split(/[/?#]/, 1)[0].split('@').pop().split(':')[0].toLowerCase();
-    return BLOCKED_HOST_PARTS.some((part) => host.includes(part));
+    return BLOCKED_HOST_PARTS.some((part) => host.includes(part))
+      || BLOCKED_SITES.some((site) => host === site || host.endsWith('.' + site));
   }
 
   /* ================= Web addresses typed into the box ================= */
