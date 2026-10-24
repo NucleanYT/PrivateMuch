@@ -1,0 +1,57 @@
+{
+  "name": "privatemuch",
+  "productName": "PrivateMuch",
+  "version": "1.0.0",
+  "description": "Private search that stores nothing.",
+  "author": "NucleanYT",
+  "license": "GPL-2.0",
+  "repository": "github:NucleanYT/PrivateMuch",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "test": "node --test",
+    "prepare-web": "node scripts/copy-web.js",
+    "start": "npm run prepare-web && electron .",
+    "dist": "npm run prepare-web && electron-builder --win nsis --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "33.4.11",
+    "electron-builder": "26.17.0"
+  },
+  "build": {
+    "appId": "com.nucleanyt.privatemuch",
+    "productName": "PrivateMuch",
+    "copyright": "GPL-2.0",
+    "files": [
+      "main.js",
+      "preload.js",
+      "lib/**",
+      "chrome/**",
+      "web/**",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": true,
+      "artifactName": "PrivateMuch-Setup.exe",
+      "shortcutName": "PrivateMuch"
+    }
+  }
+}

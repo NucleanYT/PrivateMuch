@@ -15,6 +15,7 @@
 - Updating should be easy: one Update button in the app, no hunting for links.
 - Adult content must be blocked, including the plain word "sex".
 - I want a choice of search engine: DuckDuckGo or Brave.
+- I want a Windows version too, with the same features and look.
 - Bookmarks are only shortcuts and must not save any data: just each site's address is kept (no titles, page data, cookies or history), only inside the app, never backed up or sent anywhere, removable one by one or all at once. Search results can't be bookmarked, because their address holds what I searched for.
 - When I send a screenshot with something circled, look closely at exactly that spot.
 - Talk to me in English. (I once asked for a reply in Greek, then said "back to English".)
@@ -45,6 +46,7 @@
 14. The files first only went to a side branch, so the repo's front page (the main branch) showed just the license and readme. Fixed by merging into main; every change now gets merged into main.
 15. In Settings, the teal outline of the selected search engine card was cut off on the right. Likely causes: the outline got thicker when picked, which can spill past the card's edge, and the card's press bounce briefly made it bigger than its space. Fixed both: outlines keep the same thickness and only change color (the address bar too), big cards squish much less, and cards are never clipped while bouncing.
 16. The first bookmarks also kept each page's title, but I wanted bookmarks to save no data and just be shortcuts. Fixed: only the address is kept (old titles were removed automatically), and search results can't be bookmarked.
+17. The first Windows installer often crashed before it finished, so PrivateMuch never opened, even as admin. Cause: a bug in the installer tool (electron-builder 25) on a first install: it read far past the end of a short folder path and hit memory it didn't own (error 0xC0000005), at random. Claude hadn't actually installed it on Windows before sending it. Fixed by moving to electron-builder 26.17.0, which copies that path safely. Every build now installs the app fresh 8 times on a real Windows machine, opens it, and fails if the installer crashes or no window shows. Also fixed: opening it a second time started a second copy that deleted the first one's temporary folder; now it brings the open window to the front.
 
 ### The current app and page, in case they ever need rebuilding
 - Dark gray and teal, a moving grid floor, system fonts only (nothing loaded from other sites).
@@ -65,9 +67,10 @@
 - Search engine setting (app, gear button on the home page, top-left next to Tabs; Update stays top-right): DuckDuckGo + Duck.ai (default) or Brave Search + Ask Brave. I asked for Brave's "Leon" AI; Brave's AI is called Leo and it only works inside the Brave browser, so the app uses Ask Brave (search.brave.com/ask), Brave's AI on the web. The setting and the bookmark addresses are the only things the app remembers. Brave searches get safesearch=strict (Brave doesn't document that link setting, so the word filter is the real guarantee).
 - The tab overview has an incognito look: "Private tabs" with the eye-with-a-line badge, "history-free" next to the count, a small private badge on each card, a note that nothing is kept, and a Close all tabs button.
 - Bookmarks screen (bottom bar or home page): "This page" card with a teal Bookmark button (or Bookmarked, which removes it; on search results it says searches can't be bookmarked), shortcuts below showing the site and page from the address (tap to open, × to remove), a note that a bookmark is only a shortcut, and Remove all bookmarks, which needs a second tap. Up to 200. Adult sites can't be bookmarked.
+- Windows app (`desktop/`, Electron): the same page in a private browser. One dark top bar that doubles as the title bar: Back, Forward, Reload, Home, the address field (lock, teal outline, loading line), Bookmarks, Tabs with the count, New tab, Settings. Private tabs, Bookmarks and Settings screens like Android (Update is in Settings). Every site runs in a memory-only session, Chromium's own files go to a temporary folder deleted when the window closes, and it contacts nothing on its own (Chromium's spell-check downloads from Google were switched off after a test caught them). Same filter and lists as Android (the build checks all three copies). Keyboard shortcuts like Ctrl+T, Ctrl+W, Ctrl+L, Ctrl+D. Download: https://github.com/NucleanYT/PrivateMuch/releases/download/latest/PrivateMuch-Setup.exe (Windows may warn it "protected your PC": More info, then Run anyway).
 
 ### How changes reach me
 - Work happens on a branch, GitHub builds the app on every push (the build also checks that the page's and the app's shared lists match), and then it's merged into main so the repo page and the web version update too.
-- In the app I tap Update to get the newest build. The download link always points at the newest build.
-- Claude can't run the Android app itself, so new app screens are checked by me on my phone; screenshots help.
+- In the Android app I tap Update; in the Windows app, Settings → Check for updates. The download links always point at the newest build, and both apps share one build number.
+- Claude can't run the Android app itself, so new Android screens are checked by me on my phone; screenshots help. The Windows app's engine (Electron) can be run and tested end to end in Claude's environment, but the Windows installer itself only runs on Windows.
 

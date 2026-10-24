@@ -1,4 +1,4 @@
-name: Build Android app
+name: Build apps
 
 on:
   push:
@@ -13,13 +13,27 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check the page and app share the same lists
+      - name: Check the page, Android app and Windows app share the same lists
         run: python3 .github/check_blocklist.py
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Test the Windows app's filter and storage
+        working-directory: desktop
+        run: node --test
+
+  android:
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
       - uses: actions/setup-java@v4
         with:
@@ -35,15 +49,68 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: PrivateMuch
+          name: android
           path: PrivateMuch.apk
+
+  windows:
+    needs: checks
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install
+        working-directory: desktop
+        run: npm ci
+
+      - name: Set the build number (the Update button compares it)
+        working-directory: desktop
+        run: npm version "1.0.${{ github.run_number }}" --no-git-tag-version --allow-same-version
+
+      - name: Build the installer
+        working-directory: desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npm run dist
+
+      - name: Install the app (8 fresh installs) and check its window opens
+        shell: pwsh
+        run: ./.github/windows_smoke.ps1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: desktop/dist/PrivateMuch-Setup.exe
+
+  release:
+    needs: [android, windows]
+    # Android updates still go out if only the Windows build fails.
+    if: ${{ !cancelled() && needs.android.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: android
+
+      - uses: actions/download-artifact@v4
+        if: ${{ needs.windows.result == 'success' }}
+        with:
+          name: windows
 
       - name: Publish to the "latest" release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
+          files="PrivateMuch.apk"
+          [ -f PrivateMuch-Setup.exe ] && files="$files PrivateMuch-Setup.exe"
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest PrivateMuch.apk \
+          gh release create latest $files \
             --target "$GITHUB_SHA" \
             --title "PrivateMuch build ${GITHUB_RUN_NUMBER}" \
-            --notes "Download PrivateMuch.apk below and open it on your Android phone to install. Built from ${GITHUB_SHA::7}."
+            --notes "Android: download PrivateMuch.apk and open it on your phone. Windows: download PrivateMuch-Setup.exe and run it. Built from ${GITHUB_SHA::7}."
