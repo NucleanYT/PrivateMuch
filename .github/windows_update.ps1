@@ -1,5 +1,5 @@
-# Does what Settings → Check for updates does (start the installer, close the app 0.6 s later) and checks the
-# installer really replaced the app's files and opened it again.
+# Does what Settings → Check for updates does (start the installer in its update mode, close the app 0.6 s later)
+# and checks the installer really replaced the app's files and opened it again, without stopping to ask anything.
 param([string]$Dist = 'desktop/dist')
 $ErrorActionPreference = 'Continue'
 
@@ -41,8 +41,8 @@ function Windows-Of([string[]]$Names) {
 }
 
 $failed = 0
-foreach ($variant in @('')) {
-  for ($i = 1; $i -le 2; $i++) {
+foreach ($variant in @('--updated')) {
+  for ($i = 1; $i -le 4; $i++) {
     Get-Process -Name PrivateMuch, PrivateMuch-Setup-test -ErrorAction SilentlyContinue | Stop-Process -Force
     Start-Sleep -Seconds 2
     Set-Content $marker 'old version' -NoNewline
@@ -62,5 +62,5 @@ foreach ($variant in @('')) {
   }
 }
 Get-Process -Name PrivateMuch, PrivateMuch-Setup-test -ErrorAction SilentlyContinue | Stop-Process -Force
-if ($failed) { Write-Host "FAILED: $failed of 2 updates"; exit 1 }
+if ($failed) { Write-Host "FAILED: $failed of 4 updates"; exit 1 }
 Write-Host 'Updating over the running app works'

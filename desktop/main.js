@@ -34,14 +34,19 @@ app.on('second-instance', () => {
 // Chromium's own files (GPU cache, crash reports, local state) go to a fresh temporary folder that's
 // deleted when the app closes. Leftovers from a run that crashed are deleted on the next start.
 const PROFILE_PREFIX = 'PrivateMuch-profile-';
+const SETUP_PREFIX = 'PrivateMuch-Setup-'; // installers downloaded by Check for updates
 for (const name of safeList(os.tmpdir())) {
-  if (name.startsWith(PROFILE_PREFIX)) removeFolder(path.join(os.tmpdir(), name));
+  if (name.startsWith(PROFILE_PREFIX) || name.startsWith(SETUP_PREFIX)) removeFolder(path.join(os.tmpdir(), name));
 }
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), PROFILE_PREFIX));
 app.setPath('userData', profile);
 app.setPath('sessionData', profile);
+let installingUpdate = false;
 app.on('will-quit', () => {
   removeFolder(profile);
+  // The helper below runs from the app's own folder, which the installer is about to replace; the next start
+  // deletes the leftovers instead.
+  if (installingUpdate) return;
   // Chromium still writes a few empty bookkeeping files while it shuts down, after this point. A tiny helper
   // (the app's own program, run as plain Node) waits for the app to exit, then deletes the folder for good.
   try {
@@ -527,8 +532,10 @@ async function checkForUpdate() {
     }
     await new Promise((resolve, reject) => out.end((err) => (err ? reject(err) : resolve())));
     status('Installing…');
-    // The installer replaces this version and starts the new one; this window closes so it can.
-    spawn(file, [], { detached: true, stdio: 'ignore' }).unref();
+    // The installer replaces this version and starts the new one; this window closes so it can. --updated is the
+    // installer's update mode: it waits for PrivateMuch to close instead of asking you to close it.
+    installingUpdate = true;
+    spawn(file, ['--updated'], { detached: true, stdio: 'ignore' }).unref();
     setTimeout(() => app.quit(), 600);
   } catch (err) {
     status("Couldn't update", true);
