@@ -13,18 +13,20 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-/** The bar along the bottom while a website is open: Back, Forward, Tabs (with the count) and New tab. */
+/** The bar along the bottom while a website is open: Back, Forward, Bookmarks, Tabs (with the count) and New tab. */
 final class BottomBar extends LinearLayout {
 
     interface Listener {
         void onBack();
         void onForward();
+        void onBookmarks();
         void onTabs();
         void onNewTab();
     }
 
     private final ImageButton back;
     private final ImageButton forward;
+    private final ImageButton bookmarks;
     private final TextView tabs;
 
     BottomBar(Context context, Listener listener) {
@@ -48,6 +50,10 @@ final class BottomBar extends LinearLayout {
         forward.setOnClickListener(v -> listener.onForward());
         row.addView(slot(forward, dp(48)), slotParams());
 
+        bookmarks = iconButton(R.drawable.ic_bookmark, "Bookmarks");
+        bookmarks.setOnClickListener(v -> listener.onBookmarks());
+        row.addView(slot(bookmarks, dp(48)), slotParams());
+
         tabs = AddressBar.tabsButton(context, false);
         tabs.setOnClickListener(v -> listener.onTabs());
         row.addView(slot(tabs, dp(30)), slotParams());
@@ -63,6 +69,12 @@ final class BottomBar extends LinearLayout {
     void setNavigation(boolean canGoBack, boolean canGoForward) {
         setAvailable(back, canGoBack);
         setAvailable(forward, canGoForward);
+    }
+
+    /** The bookmark icon fills teal when the open page is saved. */
+    void setBookmarked(boolean saved) {
+        bookmarks.setImageResource(saved ? R.drawable.ic_bookmark_filled : R.drawable.ic_bookmark);
+        bookmarks.setContentDescription(saved ? "Bookmarks (this page is saved)" : "Bookmarks");
     }
 
     void setTabCount(int count) {
