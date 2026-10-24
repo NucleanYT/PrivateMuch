@@ -14,6 +14,7 @@ A private search page with a springy 3D dot globe. Search with DuckDuckGo or cha
 
 - **Dot globe:** a rotating 3D globe of dots behind an eye icon. Drag it to spin it; the globe leans toward your finger while the dots spring away from it. Tap it to make it bounce.
 - **Search or Duck.ai:** a switch above the search bar picks where your text goes. Search opens DuckDuckGo results. Duck.ai sends it to Duck.ai through DuckDuckGo's `!ai` shortcut.
+- **Web addresses:** type an address like `example.com` or `https://example.com` and the site opens directly, like a browser's address bar. In the app this works in DuckDuckGo's own search box too.
 - **Blocks adult content:** searches and Duck.ai questions with adult words are blocked, including disguised spellings like "p0rn" or "p o r n". Every DuckDuckGo search uses strict Safe Search.
 - **Private browsing explained:** a 3D card that tilts where you press it, showing what gets deleted, who can still see your activity, and a live count of the cookies and storage on your device for the site it's running on.
 
@@ -28,7 +29,7 @@ The Android app goes further:
 - Your keyboard is told not to learn what you type, autofill is off, and the app is never backed up.
 - Adult websites are blocked inside the app, and so are adult searches typed into DuckDuckGo's own search box. Strict Safe Search is forced on for every DuckDuckGo search.
 
-The adult filter is a word list, so it can't catch everything. It can't read what you type inside the Duck.ai chat after it opens, and in the web version it only checks the PrivateMuch search box. The list lives in `index.html` and `ContentFilter.java`, and the build fails if the two ever differ.
+The adult filter is a word list, so it can't catch everything. It can't read what you type inside the Duck.ai chat after it opens, and in the web version it only checks the PrivateMuch search box. The lists live in `index.html` and in `ContentFilter.java` and `UrlInput.java`, and the build fails if they ever differ.
 
 What it can't hide: the websites you visit, DuckDuckGo and Duck.ai themselves, your Wi-Fi, school or work network, and your internet provider can still see your activity.
 

@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check the page and app use the same blocked words
+      - name: Check the page and app share the same lists
         run: python3 .github/check_blocklist.py
 
       - uses: actions/setup-java@v4

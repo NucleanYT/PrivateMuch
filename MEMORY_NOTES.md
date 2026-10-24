@@ -34,6 +34,7 @@
 10. Only about 10% of the incognito chat got saved. Claude can't open incognito chats, and that chat is gone, so the page was rebuilt from my description.
 11. The first rebuild cut off the search placeholder text ("...with Duc"). Fixed by shortening it to "Search".
 12. Bugs found in the cleanup pass, all fixed: button press effects didn't show on iPhone; the card tilt could follow a finger that wasn't on the card; the keyboard focus ring was hidden inside the search bar; the hidden clear button could still be reached with Tab; the page said "private mode" even in a normal window.
+13. Typing a web address (like "nucleusbot.netlify.app") searched DuckDuckGo for it instead of opening the site. Fixed: addresses now open directly, like a browser's address bar, also when typed into DuckDuckGo's own box in the app. It only counts real endings (.com, .app, the real country endings and so on), so "node.js" is still a search. Adult sites typed as addresses are blocked too.
 
 ### The current page (`index.html`), in case it ever needs rebuilding
 - Dark gray and teal, a moving grid floor, system fonts only (nothing loaded from other sites).

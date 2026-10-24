@@ -25,12 +25,14 @@ final class ContentFilter {
     };
     // BLOCKLIST-END
 
-    /** Any site whose address contains one of these is blocked in the app. */
+    /** Any site whose address contains one of these is blocked. */
+    // HOSTLIST-START (keep identical to BLOCKED_HOST_PARTS in index.html)
     private static final String[] BLOCKED_HOST_PARTS = {
         "porn", "xxx", "hentai", "xvideos", "xnxx", "xhamster", "onlyfans", "fansly", "chaturbate",
         "brazzers", "redtube", "spankbang", "rule34", "nsfw", "livejasmin", "stripchat", "bongacams",
         "camsoda", "motherless", "eporner", "tnaflix",
     };
+    // HOSTLIST-END
 
     /** Query parameters that carry what someone searched for, on DuckDuckGo and other search sites. */
     private static final String[] SEARCH_PARAMS = {"q", "query", "search_query", "p"};
