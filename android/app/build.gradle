@@ -1,0 +1,62 @@
+plugins {
+    id 'com.android.application'
+}
+
+// GitHub Actions sets GITHUB_RUN_NUMBER, so every build installs over the previous one.
+def buildNumber = (System.getenv('GITHUB_RUN_NUMBER') ?: '1') as int
+
+android {
+    namespace 'com.nucleanyt.privatemuch'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.nucleanyt.privatemuch'
+        minSdk 24
+        targetSdk 34
+        versionCode buildNumber
+        versionName "1.0.${buildNumber}"
+    }
+
+    // A fixed key so updates install over the old app. This app is only sideloaded, never published to a store.
+    signingConfigs {
+        sideload {
+            storeFile file('sideload.keystore')
+            storePassword 'privatemuch'
+            keyAlias 'privatemuch'
+            keyPassword 'privatemuch'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.sideload
+        }
+    }
+
+    sourceSets {
+        main {
+            assets.srcDirs += layout.buildDirectory.dir('generated/web').get().asFile
+        }
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+// The page itself lives at the repo root (index.html); copy it into the app's assets on every build.
+def copyWeb = tasks.register('copyWeb', Copy) {
+    from(rootProject.file('../index.html'))
+    from(rootProject.file('../icons')) {
+        into 'icons'
+    }
+    into layout.buildDirectory.dir('generated/web')
+}
+tasks.named('preBuild') { dependsOn copyWeb }

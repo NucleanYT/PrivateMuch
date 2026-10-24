@@ -143,6 +143,28 @@ h1 {
 }
 .lede { margin: 0; max-width: 34ch; font-size: 16px; line-height: 1.5; color: var(--muted); text-wrap: pretty; }
 
+/* ---------- Search / Duck.ai switch ---------- */
+.mode {
+  justify-self: center; position: relative; margin-bottom: -8px;
+  display: grid; grid-template-columns: 1fr 1fr; padding: 4px;
+  border-radius: 13px; background: var(--surface); border: 1px solid var(--line);
+}
+.mode .thumb {
+  position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px);
+  border-radius: 9px; background: var(--teal);
+  transition: transform .55s var(--spring);
+}
+.mode[data-mode="chat"] .thumb { transform: translateX(100%); }
+.mode button {
+  position: relative; z-index: 1; min-width: 108px; padding: 10px 18px;
+  border: 0; border-radius: 9px; background: transparent; cursor: pointer;
+  font: 600 14px/1 var(--font-ui); color: var(--muted);
+  transition: color .3s, transform .45s var(--spring);
+}
+.mode button[aria-checked="true"] { color: var(--bg); }
+.mode button:active { transform: scale(.94); }
+.mode button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
 /* ---------- Search ---------- */
 .search-wrap { padding-inline: 6px; }
 .search {
@@ -173,6 +195,7 @@ h1 {
 .search.sent { transform: translateY(-3px) scale(1.03); }
 .search.sent::after { animation: sweep .5s var(--ease-out); }
 .glass { flex: none; width: 20px; height: 20px; color: var(--muted); transition: color .3s; }
+.search[data-mode="search"] .ico-chat, .search[data-mode="chat"] .ico-search { display: none; }
 .search:focus-within .glass { color: var(--teal); }
 .glass svg, .btn svg { width: 100%; height: 100%; display: block; }
 #q {
@@ -290,10 +313,17 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
     <p class="lede rise" style="--d:.18s">PrivateMuch doesn't store anything you type. Use it in a private window and your browser clears the rest when you close it.</p>
   </div>
 
-  <div class="search-wrap rise" style="--d:.26s">
-    <form class="search" id="search" role="search" autocomplete="off" novalidate>
+  <div class="mode rise" id="mode" role="radiogroup" aria-label="Search or chat" data-mode="search" style="--d:.22s">
+    <span class="thumb" aria-hidden="true"></span>
+    <button type="button" role="radio" aria-checked="true" data-mode="search">Search</button>
+    <button type="button" role="radio" aria-checked="false" data-mode="chat" tabindex="-1">Duck.ai</button>
+  </div>
+
+  <div class="search-wrap rise" style="--d:.28s">
+    <form class="search" id="search" role="search" autocomplete="off" novalidate data-mode="search">
       <span class="glass" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
+        <svg class="ico-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
+        <svg class="ico-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5h-7l-4.5 3.5v-3.5H5A1.5 1.5 0 0 1 3.5 15V6A1.5 1.5 0 0 1 5 4.5Z"/></svg>
       </span>
       <input id="q" type="search" placeholder="Search" aria-label="Search privately with DuckDuckGo"
              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
@@ -307,7 +337,7 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
     </form>
   </div>
 
-  <p class="fine rise" style="--d:.32s">Searches open on DuckDuckGo. Nothing is stored here.</p>
+  <p class="fine rise" id="fine" style="--d:.34s">Searches open on DuckDuckGo. Nothing is stored here.</p>
 
   <section class="card-wrap rise" style="--d:.42s" aria-labelledby="how">
     <article class="card" id="card">
@@ -330,7 +360,7 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
           <h3>Can still see what you do</h3>
           <ul>
             <li style="--i:4"><svg class="mark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1.5 8C3.3 4.9 5.5 3.5 8 3.5s4.7 1.4 6.5 4.5C12.7 11.1 10.5 12.5 8 12.5S3.3 11.1 1.5 8Z"/><circle cx="8" cy="8" r="1.8" fill="currentColor"/></svg>Websites you visit</li>
-            <li style="--i:5"><svg class="mark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1.5 8C3.3 4.9 5.5 3.5 8 3.5s4.7 1.4 6.5 4.5C12.7 11.1 10.5 12.5 8 12.5S3.3 11.1 1.5 8Z"/><circle cx="8" cy="8" r="1.8" fill="currentColor"/></svg>DuckDuckGo, which gets your search</li>
+            <li style="--i:5"><svg class="mark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1.5 8C3.3 4.9 5.5 3.5 8 3.5s4.7 1.4 6.5 4.5C12.7 11.1 10.5 12.5 8 12.5S3.3 11.1 1.5 8Z"/><circle cx="8" cy="8" r="1.8" fill="currentColor"/></svg>DuckDuckGo and Duck.ai, which get what you send</li>
             <li style="--i:6"><svg class="mark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1.5 8C3.3 4.9 5.5 3.5 8 3.5s4.7 1.4 6.5 4.5C12.7 11.1 10.5 12.5 8 12.5S3.3 11.1 1.5 8Z"/><circle cx="8" cy="8" r="1.8" fill="currentColor"/></svg>Your work, school or Wi-Fi network</li>
             <li style="--i:7"><svg class="mark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1.5 8C3.3 4.9 5.5 3.5 8 3.5s4.7 1.4 6.5 4.5C12.7 11.1 10.5 12.5 8 12.5S3.3 11.1 1.5 8Z"/><circle cx="8" cy="8" r="1.8" fill="currentColor"/></svg>Your internet provider</li>
           </ul>
@@ -670,6 +700,39 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
     a.remove();
   }
 
+  const modeEl = $('#mode');
+  const fine = $('#fine');
+  const COPY = {
+    search: { placeholder: 'Search', label: 'Search privately with DuckDuckGo', fine: 'Searches open on DuckDuckGo. Nothing is stored here.' },
+    chat: { placeholder: 'Ask Duck.ai', label: 'Ask Duck.ai privately', fine: 'Chats open on Duck.ai. Nothing is stored here.' },
+  };
+  let mode = 'search'; // never remembered between visits
+
+  function setMode(next, focusIt) {
+    mode = next;
+    modeEl.dataset.mode = next;
+    form.dataset.mode = next;
+    for (const b of modeEl.querySelectorAll('button')) {
+      const on = b.dataset.mode === next;
+      b.setAttribute('aria-checked', String(on));
+      b.tabIndex = on ? 0 : -1;
+      if (on && focusIt) b.focus();
+    }
+    q.placeholder = COPY[next].placeholder;
+    q.setAttribute('aria-label', COPY[next].label);
+    fine.textContent = COPY[next].fine;
+    restart('tick');
+  }
+  modeEl.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (b && b.dataset.mode !== mode) setMode(b.dataset.mode);
+  });
+  modeEl.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    setMode(mode === 'search' ? 'chat' : 'search', true);
+  });
+
   q.addEventListener('input', () => {
     form.classList.toggle('has-text', q.value.length > 0);
     restart('tick');
@@ -678,9 +741,13 @@ h3 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-ui); color: var(--fg); }
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const term = q.value.trim();
-    if (!term) { restart('nudge'); q.focus(); return; }
+    if (!term) {
+      if (mode === 'chat') { openSearch('https://duck.ai/'); return; } // empty chat: just open Duck.ai
+      restart('nudge'); q.focus(); return;
+    }
     restart('sent');
-    openSearch('https://duckduckgo.com/?q=' + encodeURIComponent(term));
+    // "!ai" is DuckDuckGo's shortcut that hands the text to Duck.ai.
+    openSearch('https://duckduckgo.com/?q=' + encodeURIComponent(mode === 'chat' ? '!ai ' + term : term));
     setTimeout(() => { wipe(); q.blur(); form.classList.remove('sent'); }, 350);
   });
   // Never keep the typed text, even when the browser restores the page from its back/forward cache.
