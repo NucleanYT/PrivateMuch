@@ -374,12 +374,12 @@ ipcMain.on('switch-tab', (event, id) => { const tab = tabs.find((t) => t.id === 
 ipcMain.on('close-tab', (event, id) => { const tab = tabs.find((t) => t.id === id); if (tab) closeTab(tab); });
 ipcMain.on('close-all-tabs', () => closeAllTabs());
 
-// The tab overview, Bookmarks and Settings cover the page, so the page steps aside while one is open.
 // Windows' own minimize / maximize / close buttons sit on whatever is showing: the top bar or a screen.
 function controlsColor(color) {
   try { win.setTitleBarOverlay({ color, symbolColor: ICON, height: TOOLBAR }); } catch (err) { /* not on this system */ }
 }
 
+// The tab overview, Bookmarks and Settings cover the page, so the page steps aside while one is open.
 ipcMain.handle('overlay', async (event, open) => {
   if (open && !overlayOpen) {
     await capturePreview(current);
