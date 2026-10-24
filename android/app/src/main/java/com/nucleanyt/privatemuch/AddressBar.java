@@ -38,7 +38,7 @@ final class AddressBar extends LinearLayout {
         void onHome();
         void onSubmit(String typed);
         void onReload();
-        void onTabs();
+        void onEditing(boolean editing);
     }
 
     private static final int INK = Color.parseColor("#0B1012");
@@ -55,7 +55,6 @@ final class AddressBar extends LinearLayout {
     private final EditText field;
     private final ImageButton action;
     private final View progress;
-    private final TextView tabs;
     private ValueAnimator strokeAnimation;
     private String url = "";
 
@@ -129,12 +128,6 @@ final class AddressBar extends LinearLayout {
         LayoutParams pillParams = new LayoutParams(0, dp(42), 1f);
         pillParams.setMarginStart(dp(2));
         row.addView(pill, pillParams);
-
-        tabs = tabsButton(context, false);
-        tabs.setOnClickListener(v -> listener.onTabs());
-        LayoutParams tabsParams = new LayoutParams(dp(34), dp(34));
-        tabsParams.setMarginStart(dp(10));
-        row.addView(tabs, tabsParams);
         addView(row, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(58)));
 
         // A hairline under the bar, with the teal loading line drawn over it.
@@ -171,11 +164,6 @@ final class AddressBar extends LinearLayout {
         }
     }
 
-    void setTabCount(int count) {
-        tabs.setText(count > 99 ? ":D" : String.valueOf(count));
-        tabs.setContentDescription(count == 1 ? "1 tab open" : count + " tabs open");
-    }
-
     boolean isEditing() {
         return field.hasFocus();
     }
@@ -187,6 +175,7 @@ final class AddressBar extends LinearLayout {
     }
 
     private void showEditing(boolean editing) {
+        listener.onEditing(editing);
         field.setText(editing ? url : displayName(url));
         if (editing) field.post(field::selectAll);
         action.setImageResource(editing ? R.drawable.ic_clear : R.drawable.ic_reload);

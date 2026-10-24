@@ -59,6 +59,7 @@ public class MainActivity extends Activity {
     private FrameLayout screen;    // everything, with the tab overview drawn on top
     private FrameLayout content;   // holds the current tab's WebView
     private AddressBar addressBar; // shown only while a website is open
+    private BottomBar bottomBar;   // Back, Forward, Tabs, New tab; also only while a website is open
     private LinearLayout homeButtons; // Tabs + Update, shown only on the home page
     private TextView homeTabsButton;
     private TextView updateButton;
@@ -179,7 +180,8 @@ public class MainActivity extends Activity {
             @Override public void onHome() { goHome(); }
             @Override public void onSubmit(String typed) { open(typed); }
             @Override public void onReload() { current.web.reload(); }
-            @Override public void onTabs() { showTabs(); }
+            // The bottom bar steps aside while typing, so it doesn't ride on top of the keyboard.
+            @Override public void onEditing(boolean editing) { bottomBar.setVisibility(editing || current.onHome() ? View.GONE : View.VISIBLE); }
         });
         addressBar.setVisibility(View.GONE);
         root.addView(addressBar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -201,6 +203,15 @@ public class MainActivity extends Activity {
         corner.setMargins(0, dp(10), dp(12), 0);
         content.addView(homeButtons, corner);
         root.addView(content, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+
+        bottomBar = new BottomBar(this, new BottomBar.Listener() {
+            @Override public void onBack() { if (current.web.canGoBack()) current.web.goBack(); }
+            @Override public void onForward() { if (current.web.canGoForward()) current.web.goForward(); }
+            @Override public void onTabs() { showTabs(); }
+            @Override public void onNewTab() { newTab(); }
+        });
+        bottomBar.setVisibility(View.GONE);
+        root.addView(bottomBar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         screen = new FrameLayout(this);
         screen.addView(root, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -289,7 +300,7 @@ public class MainActivity extends Activity {
     }
 
     private void updateTabCount() {
-        addressBar.setTabCount(tabs.size());
+        bottomBar.setTabCount(tabs.size());
         homeTabsButton.setText(String.valueOf(tabs.size()));
         homeTabsButton.setContentDescription(tabs.size() == 1 ? "1 tab open" : tabs.size() + " tabs open");
     }
@@ -322,9 +333,11 @@ public class MainActivity extends Activity {
         if (addressBar.getVisibility() != visibility) {
             if (onHome) addressBar.stopEditing();
             addressBar.setVisibility(visibility);
+            bottomBar.setVisibility(visibility);
             homeButtons.setVisibility(onHome ? View.VISIBLE : View.GONE);
         }
         if (!onHome) addressBar.setUrl(url);
+        bottomBar.setNavigation(current != null && current.web.canGoBack(), current != null && current.web.canGoForward());
     }
 
     /** What the address bar does with typed text: same rules as the home page's search box. */
