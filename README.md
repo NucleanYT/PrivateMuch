@@ -8,6 +8,7 @@ A private search page with a springy 3D dot globe. Search with DuckDuckGo or cha
 ## Get it
 
 - **Android app:** [download PrivateMuch.apk](https://github.com/NucleanYT/PrivateMuch/releases/download/latest/PrivateMuch.apk) and open it on your phone to install. Android will ask you to allow installs from your browser or file manager the first time.
+- **Windows app:** [download PrivateMuch-Setup.exe](https://github.com/NucleanYT/PrivateMuch/releases/download/latest/PrivateMuch-Setup.exe) and run it. Windows may say it "protected your PC" because the app isn't signed by a paid certificate: choose **More info**, then **Run anyway**.
 - **Web version:** [nucleanyt.github.io/PrivateMuch](https://nucleanyt.github.io/PrivateMuch/). Open it in a private (incognito) tab for the most privacy.
 
 ## What it does
@@ -34,9 +35,19 @@ The Android app goes further:
 - Your keyboard is told not to learn what you type, autofill is off, and the app is never backed up.
 - Adult websites are blocked inside the app, and so are adult searches typed into DuckDuckGo's own search box. Strict Safe Search is forced on for every DuckDuckGo and Brave search.
 
-The adult filter is a word list, so it can't catch everything. It can't read what you type inside the Duck.ai chat after it opens, and in the web version it only checks the PrivateMuch search box. The lists live in `index.html` and in `ContentFilter.java` and `UrlInput.java`, and the build fails if they ever differ.
+The adult filter is a word list, so it can't catch everything. It can't read what you type inside the Duck.ai chat after it opens, and in the web version it only checks the PrivateMuch search box. The lists live in `index.html`, in `ContentFilter.java` and `UrlInput.java` (Android), and in `desktop/lib/filter.js` (Windows), and the build fails if they ever differ.
 
 What it can't hide: the websites you visit, DuckDuckGo and Duck.ai themselves, your Wi-Fi, school or work network, and your internet provider can still see your activity.
+
+## The Windows app
+
+The same page and the same private browser, built for a mouse and keyboard. One dark bar along the top doubles as the window's title bar: Back, Forward, Reload, Home, the address field (with the lock and loading line), Bookmarks, Tabs, New tab and Settings. The Private tabs, Bookmarks and Settings screens look like the Android app's.
+
+- Every site runs in a memory-only session: cookies, cache, site data and history never touch the disk. Chromium's own files go to a temporary folder that's deleted when the window closes.
+- It doesn't contact anything on its own (no component updates, no spell-check downloads). It only connects to the sites you open, and to GitHub when you press Check for updates.
+- The same adult filter, strict Safe Search and web-address rules as the Android app, using the same lists.
+- Keyboard: Ctrl+T new tab, Ctrl+W close tab, Ctrl+Tab next tab, Ctrl+L address bar, Ctrl+D bookmark, Alt+Left / Alt+Right back and forward, F5 reload, Ctrl+plus / minus / 0 zoom, Esc closes a screen.
+- Settings → Check for updates downloads the newest build and installs it.
 
 ## Updating the app
 
@@ -49,7 +60,8 @@ Tap **Update** in the top-right corner of the app's home page. It checks GitHub 
 | `index.html` | The whole page: layout, globe, search and card, in one file with no outside libraries |
 | `manifest.webmanifest`, `icons/` | App name and icons for adding the web version to a home screen |
 | `android/` | The Android app, which shows `index.html` in a private built-in browser |
-| `.github/workflows/android.yml` | Builds the APK on every push and publishes it as the `latest` release |
+| `desktop/` | The Windows app (Electron): `main.js` runs tabs, privacy and the filter, `chrome/` is the top bar and screens, `lib/filter.js` holds the shared lists and rules |
+| `.github/workflows/android.yml` | On every push: checks the shared lists match in all three copies, tests the Windows app's filter, builds the Android APK and the Windows installer, and publishes both as the `latest` release |
 | `MEMORY_NOTES.md` | Notes on preferences and past fixes, so future changes keep what works |
 
 To build the app yourself, install JDK 17 and the Android SDK, then run `./gradlew assembleRelease` inside `android/`. The APK ends up in `android/app/build/outputs/apk/release/`.
