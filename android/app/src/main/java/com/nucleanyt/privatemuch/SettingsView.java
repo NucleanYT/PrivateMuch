@@ -82,6 +82,7 @@ final class SettingsView extends FrameLayout {
         LinearLayout body = new LinearLayout(context);
         body.setOrientation(LinearLayout.VERTICAL);
         body.setPadding(dp(18), dp(8), dp(18), dp(28));
+        body.setClipChildren(false); // a card's bounce may reach past its edge for a moment; never cut it off
 
         body.addView(label("Search engine"));
         int i = 0;
@@ -174,7 +175,7 @@ final class SettingsView extends FrameLayout {
             for (Option o : options) show(o, o == option, true);
             listener.onEngine(engine);
         });
-        AddressBar.addSpringPress(card);
+        AddressBar.addSpringPress(card, 0.97f);
 
         card.setAlpha(0f);
         card.setTranslationY(dp(14));
@@ -184,7 +185,7 @@ final class SettingsView extends FrameLayout {
     }
 
     private void show(Option option, boolean picked, boolean animate) {
-        option.shape.setStroke(dp(picked ? 2 : 1), picked ? TEAL : LINE);
+        option.shape.setStroke(dp(2), picked ? TEAL : LINE); // same width either way, only the color changes
         float scale = picked ? 1f : 0f;
         if (animate) {
             option.dot.animate().scaleX(scale).scaleY(scale).setDuration(380).setInterpolator(new OvershootInterpolator(3f));

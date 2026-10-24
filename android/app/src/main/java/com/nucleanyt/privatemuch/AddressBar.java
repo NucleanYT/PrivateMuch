@@ -56,6 +56,7 @@ final class AddressBar extends LinearLayout {
     private final ImageButton action;
     private final View progress;
     private ValueAnimator strokeAnimation;
+    private final int strokeWidth; // never changes, so a thicker outline can't spill past the edge and get cut off
     private String url = "";
 
     AddressBar(Context context, Listener listener) {
@@ -80,9 +81,10 @@ final class AddressBar extends LinearLayout {
         pill.setOrientation(HORIZONTAL);
         pill.setGravity(Gravity.CENTER_VERTICAL);
         pill.setPadding(dp(12), 0, dp(2), 0);
+        strokeWidth = Math.round(1.5f * getResources().getDisplayMetrics().density);
         pillShape.setColor(SURFACE);
         pillShape.setCornerRadius(dp(14));
-        pillShape.setStroke(dp(1), LINE);
+        pillShape.setStroke(strokeWidth, LINE);
         pill.setBackground(pillShape);
 
         lock = new ImageView(context);
@@ -189,7 +191,7 @@ final class AddressBar extends LinearLayout {
         int to = editing ? TEAL : LINE;
         strokeAnimation = ValueAnimator.ofObject(new ArgbEvaluator(), from, to);
         strokeAnimation.setDuration(220);
-        strokeAnimation.addUpdateListener(a -> pillShape.setStroke(dp(editing ? 2 : 1), (int) a.getAnimatedValue()));
+        strokeAnimation.addUpdateListener(a -> pillShape.setStroke(strokeWidth, (int) a.getAnimatedValue()));
         strokeAnimation.start();
     }
 
@@ -240,9 +242,14 @@ final class AddressBar extends LinearLayout {
 
     /** A gentle squish when pressed and a bouncy return, used by every button in the app. */
     static void addSpringPress(View view) {
+        addSpringPress(view, 0.9f);
+    }
+
+    /** Big cards squish much less, so their bounce back stays inside the screen. */
+    static void addSpringPress(View view, float pressedScale) {
         view.setOnTouchListener((v, e) -> {
             if (e.getActionMasked() == MotionEvent.ACTION_DOWN) {
-                v.animate().scaleX(0.9f).scaleY(0.9f).setDuration(120).setInterpolator(new DecelerateInterpolator());
+                v.animate().scaleX(pressedScale).scaleY(pressedScale).setDuration(120).setInterpolator(new DecelerateInterpolator());
             } else if (e.getActionMasked() == MotionEvent.ACTION_UP || e.getActionMasked() == MotionEvent.ACTION_CANCEL) {
                 v.animate().scaleX(1f).scaleY(1f).setDuration(450).setInterpolator(new OvershootInterpolator(3f));
             }
